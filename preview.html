@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分镜画板工具</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: #16213e;
+      border-bottom: 1px solid #0f3460;
+      flex-shrink: 0;
+    }
+
+    .app-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .btn-add {
+      padding: 8px 16px;
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-add:hover { background: #c73a50; }
+
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .canvas-area {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    .storyboard-canvas {
+      position: relative;
+      width: 2000px;
+      height: 1500px;
+      background: #1a1a2e;
+    }
+
+    .canvas-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .panel-card {
+      position: absolute;
+      background: #16213e;
+      border: 2px solid #0f3460;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .panel-card:active { cursor: grabbing; }
+
+    .panel-card.selected {
+      border-color: #e94560;
+      box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: #0f3460;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .panel-number {
+      color: #e94560;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .panel-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .panel-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #1a1a2e;
+    }
+
+    .panel-body img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .panel-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .panel-placeholder span {
+      font-size: 28px;
+      opacity: 0.6;
+    }
+
+    .panel-footer {
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #aaa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-top: 1px solid #0f3460;
+    }
+
+    .resize-handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #e94560;
+      border-radius: 50%;
+      z-index: 10;
+    }
+
+    .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+    .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+    .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+    .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+
+    .side-panel {
+      width: 280px;
+      background: #16213e;
+      border-left: 1px solid #0f3460;
+      padding: 20px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .side-panel.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .side-panel h3 {
+      margin-bottom: 16px;
+      font-size: 16px;
+      color: #eee;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 10px;
+      background: #1a1a2e;
+      border: 1px solid #0f3460;
+      border-radius: 6px;
+      color: #eee;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus { border-color: #e94560; }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-row input { flex: 1; }
+    .input-row span { color: #666; }
+
+    .form-actions {
+      margin-top: 24px;
+    }
+
+    .btn-delete {
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      color: #e94560;
+      border: 1px solid #e94560;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #e94560;
+      color: #fff;
+    }
+
+    .canvas-area::-webkit-scrollbar { width: 8px; height: 8px; }
+    .canvas-area::-webkit-scrollbar-track { background: #16213e; }
+    .canvas-area::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 4px; }
+    .canvas-area::-webkit-scrollbar-thumb:hover { background: #1a4b7a; }
+    .side-panel::-webkit-scrollbar { width: 6px; }
+    .side-panel::-webkit-scrollbar-track { background: #16213e; }
+    .side-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>🎬 分镜画板工具</h1>
+      <button class="btn-add" id="btnAdd">+ 新建分镜</button>
+    </header>
+    <div class="app-body">
+      <div class="canvas-area" id="canvasArea">
+        <div class="storyboard-canvas" id="canvas">
+          <div class="canvas-grid"></div>
+        </div>
+      </div>
+      <div class="side-panel empty" id="sidePanel">
+        <p>👈 在画布上选择一个分镜进行编辑</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let panels = [
+      { id: '1', title: '开场镜头', description: '远景，城市全景，日出', x: 100, y: 100, width: 240, height: 135, selected: false },
+      { id: '2', title: '角色登场', description: '中景，主角从画面左侧走入', x: 400, y: 100, width: 240, height: 135, selected: false },
+      { id: '3', title: '对话场景', description: '近景，双人对话，表情特写', x: 700, y: 100, width: 240, height: 135, selected: false },
+    ];
+    let selectedId = null;
+    let dragging = null;
+
+    const canvas = document.getElementById('canvas');
+    const sidePanel = document.getElementById('sidePanel');
+    const btnAdd = document.getElementById('btnAdd');
+
+    function renderPanels() {
+      const oldCards = canvas.querySelectorAll('.panel-card');
+      oldCards.forEach(c => c.remove());
+
+      panels.forEach(panel => {
+        const card = document.createElement('div');
+        card.className = 'panel-card' + (panel.selected ? ' selected' : '');
+        card.style.left = panel.x + 'px';
+        card.style.top = panel.y + 'px';
+        card.style.width = panel.width + 'px';
+        card.style.height = panel.height + 'px';
+        card.dataset.id = panel.id;
+
+        card.innerHTML = `
+          <div class="panel-header">
+            <span class="panel-number">#${panel.id}</span>
+            <span class="panel-title">${escapeHtml(panel.title)}</span>
+          </div>
+          <div class="panel-body">
+            <div class="panel-placeholder">
+              <span>🖼️</span>
+              <small>点击添加参考图</small>
+            </div>
+          </div>
+          <div class="panel-footer">
+            <span>${escapeHtml(panel.description) || '暂无描述'}</span>
+          </div>
+          ${panel.selected ? `
+            <div class="resize-handle nw"></div>
+            <div class="resize-handle ne"></div>
+            <div class="resize-handle sw"></div>
+            <div class="resize-handle se"></div>
+          ` : ''}
+        `;
+
+        card.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          selectPanel(panel.id);
+          dragging = {
+            id: panel.id,
+            offsetX: e.clientX - panel.x,
+            offsetY: e.clientY - panel.y,
+          };
+        });
+
+        canvas.appendChild(card);
+      });
+    }
+
+    function renderPanel() {
+      const panel = panels.find(p => p.id === selectedId) || null;
+
+      if (!panel) {
+        sidePanel.className = 'side-panel empty';
+        sidePanel.innerHTML = '<p>👈 在画布上选择一个分镜进行编辑</p>';
+        return;
+      }
+
+      sidePanel.className = 'side-panel';
+      sidePanel.innerHTML = `
+        <h3>✏️ 分镜属性</h3>
+        <div class="form-group">
+          <label>标题</label>
+          <input type="text" id="inputTitle" value="${escapeHtml(panel.title)}">
+        </div>
+        <div class="form-group">
+          <label>描述</label>
+          <textarea id="inputDesc" rows="4">${escapeHtml(panel.description)}</textarea>
+        </div>
+        <div class="form-group">
+          <label>位置</label>
+          <div class="input-row">
+            <input type="number" id="inputX" value="${Math.round(panel.x)}">
+            <input type="number" id="inputY" value="${Math.round(panel.y)}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>尺寸</label>
+          <div class="input-row">
+            <input type="number" id="inputW" value="${panel.width}">
+            <span>×</span>
+            <input type="number" id="inputH" value="${panel.height}">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-delete" id="btnDelete">🗑️ 删除分镜</button>
+        </div>
+      `;
+
+      document.getElementById('inputTitle').addEventListener('input', (e) => {
+        panel.title = e.target.value;
+        renderPanels();
+      });
+      document.getElementById('inputDesc').addEventListener('input', (e) => {
+        panel.description = e.target.value;
+        renderPanels();
+      });
+      document.getElementById('inputX').addEventListener('input', (e) => {
+        panel.x = Number(e.target.value);
+        renderPanels();
+      });
+      document.getElementById('inputY').addEventListener('input', (e) => {
+        panel.y = Number(e.target.value);
+        renderPanels();
+      });
+      document.getElementById('inputW').addEventListener('input', (e) => {
+        panel.width = Number(e.target.value);
+        renderPanels();
+      });
+      document.getElementById('inputH').addEventListener('input', (e) => {
+        panel.height = Number(e.target.value);
+        renderPanels();
+      });
+      document.getElementById('btnDelete').addEventListener('click', () => {
+        deletePanel(panel.id);
+      });
+    }
+
+    function selectPanel(id) {
+      selectedId = id;
+      panels.forEach(p => p.selected = (p.id === id));
+      renderPanels();
+      renderPanel();
+    }
+
+    function deletePanel(id) {
+      panels = panels.filter(p => p.id !== id);
+      selectedId = null;
+      renderPanels();
+      renderPanel();
+    }
+
+    function addPanel() {
+      const newPanel = {
+        id: Date.now().toString(),
+        title: `分镜 ${panels.length + 1}`,
+        description: '',
+        x: 100 + panels.length * 50,
+        y: 100 + panels.length * 50,
+        width: 240,
+        height: 135,
+        selected: false,
+      };
+      panels.push(newPanel);
+      renderPanels();
+      selectPanel(newPanel.id);
+    }
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const p = panels.find(p => p.id === dragging.id);
+      if (p) {
+        p.x = e.clientX - dragging.offsetX;
+        p.y = e.clientY - dragging.offsetY;
+        renderPanels();
+        if (selectedId === dragging.id) {
+          const inputX = document.getElementById('inputX');
+          const inputY = document.getElementById('inputY');
+          if (inputX) inputX.value = Math.round(p.x);
+          if (inputY) inputY.value = Math.round(p.y);
+        }
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      dragging = null;
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (e.target === canvas || e.target.classList.contains('canvas-grid')) {
+        selectPanel(null);
+      }
+    });
+
+    btnAdd.addEventListener('click', addPanel);
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    renderPanels();
+  </script>
+</body>
+</html>
