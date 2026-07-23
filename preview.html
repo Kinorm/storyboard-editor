@@ -6,479 +6,859 @@
   <title>分镜画板工具</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
+    :root {
+      --bg-dark: #1a1a2e;
+      --bg-panel: #16213e;
+      --border: #0f3460;
+      --accent: #e94560;
+      --text: #eee;
+      --text-dim: #aaa;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #1a1a2e;
-      color: #eee;
+      background: var(--bg-dark);
+      color: var(--text);
       overflow: hidden;
       height: 100vh;
     }
+    .hidden { display: none !important; }
 
-    .app {
+    /* ===== 上传页面 ===== */
+    .upload-page {
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
       height: 100vh;
+      gap: 32px;
+      padding: 40px;
     }
+    .upload-page h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 4px;
+    }
+    .upload-box {
+      width: 600px;
+      height: 300px;
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .upload-box:hover {
+      border-color: var(--accent);
+      background: rgba(233, 69, 96, 0.05);
+    }
+    .upload-box .icon { font-size: 64px; opacity: 0.6; }
+    .upload-box p { color: var(--text-dim); font-size: 16px; }
+    .upload-box .sub { font-size: 13px; color: #666; }
 
+    /* ===== 顶部导航 ===== */
     .app-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 24px;
-      background: #16213e;
-      border-bottom: 1px solid #0f3460;
+      padding: 0 24px;
+      height: 56px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-
-    .app-header h1 {
-      font-size: 20px;
-      font-weight: 600;
+    .app-header .left { display: flex; align-items: center; gap: 20px; }
+    .app-header h2 { font-size: 18px; font-weight: 600; }
+    .back-btn {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--text-dim); }
+    .scene-info {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+    .view-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-dark);
+      padding: 3px;
+      border-radius: 8px;
+    }
+    .view-tabs button {
+      padding: 6px 18px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .view-tabs button.active {
+      background: var(--accent);
+      color: #fff;
     }
 
-    .btn-add {
-      padding: 8px 16px;
-      background: #e94560;
+    /* ===== 现代视图 ===== */
+    .modern-view {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .modern-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .modern-canvas-area {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+    }
+    .shot-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding-bottom: 40px;
+    }
+    .shot-card {
+      width: 320px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: grab;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      flex-shrink: 0;
+    }
+    .shot-card:hover { border-color: rgba(233, 69, 96, 0.4); }
+    .shot-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.2), 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .shot-card:active { cursor: grabbing; }
+    .shot-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #0f1a30;
+      font-size: 13px;
+    }
+    .shot-number {
+      background: var(--accent);
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .shot-meta {
+      display: flex;
+      gap: 6px;
+    }
+    .meta-tag {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text-dim);
+    }
+    .shot-image {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(135deg, #0f1a30, #1a2a4a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .shot-image .placeholder-text {
+      color: #555;
+      font-size: 14px;
+      text-align: center;
+    }
+    .shot-image .ai-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 2px 8px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .shot-content {
+      padding: 12px;
+      font-size: 13px;
+    }
+    .shot-field {
+      margin-bottom: 8px;
+    }
+    .shot-field:last-child { margin-bottom: 0; }
+    .shot-field label {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .shot-field .value {
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .shot-field .value.dialogue {
+      color: #7ec8e3;
+      font-style: italic;
+      padding: 6px 10px;
+      background: rgba(126, 200, 227, 0.08);
+      border-radius: 6px;
+      border-left: 2px solid #7ec8e3;
+    }
+
+    /* ===== 右侧属性面板 ===== */
+    .detail-panel {
+      width: 340px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .detail-panel.empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #666;
+      font-size: 14px;
+    }
+    .detail-panel h3 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
       color: #fff;
       border: none;
       border-radius: 6px;
       font-size: 14px;
       cursor: pointer;
-      transition: background 0.2s;
+      margin-top: 8px;
     }
-
-    .btn-add:hover { background: #c73a50; }
-
-    .app-body {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    .canvas-area {
-      flex: 1;
-      overflow: auto;
-      position: relative;
-    }
-
-    .storyboard-canvas {
-      position: relative;
-      width: 2000px;
-      height: 1500px;
-      background: #1a1a2e;
-    }
-
-    .canvas-grid {
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-    }
-
-    .panel-card {
-      position: absolute;
-      background: #16213e;
-      border: 2px solid #0f3460;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      cursor: grab;
-      user-select: none;
-      transition: box-shadow 0.2s, border-color 0.2s;
-    }
-
-    .panel-card:active { cursor: grabbing; }
-
-    .panel-card.selected {
-      border-color: #e94560;
-      box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
-    }
-
-    .panel-header {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      background: #0f3460;
-      font-size: 13px;
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .panel-number {
-      color: #e94560;
-      font-weight: 700;
-      font-size: 12px;
-    }
-
-    .panel-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .panel-body {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: #1a1a2e;
-    }
-
-    .panel-body img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .panel-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: #666;
-      font-size: 12px;
-    }
-
-    .panel-placeholder span {
-      font-size: 28px;
-      opacity: 0.6;
-    }
-
-    .panel-footer {
-      padding: 6px 10px;
-      font-size: 12px;
-      color: #aaa;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      border-top: 1px solid #0f3460;
-    }
-
-    .resize-handle {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: #e94560;
-      border-radius: 50%;
-      z-index: 10;
-    }
-
-    .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
-    .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
-    .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
-    .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
-
-    .side-panel {
-      width: 280px;
-      background: #16213e;
-      border-left: 1px solid #0f3460;
-      padding: 20px;
-      overflow-y: auto;
-      flex-shrink: 0;
-    }
-
-    .side-panel.empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #666;
-      font-size: 14px;
-      text-align: center;
-    }
-
-    .side-panel h3 {
-      margin-bottom: 16px;
-      font-size: 16px;
-      color: #eee;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 13px;
-      color: #aaa;
-    }
-
-    .form-group input,
-    .form-group textarea {
-      width: 100%;
-      padding: 8px 10px;
-      background: #1a1a2e;
-      border: 1px solid #0f3460;
-      border-radius: 6px;
-      color: #eee;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-      font-family: inherit;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus { border-color: #e94560; }
-
-    .input-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .input-row input { flex: 1; }
-    .input-row span { color: #666; }
-
-    .form-actions {
-      margin-top: 24px;
-    }
-
-    .btn-delete {
+    .btn-primary:hover { background: #c73a50; }
+    .btn-secondary {
       width: 100%;
       padding: 10px;
       background: transparent;
-      color: #e94560;
-      border: 1px solid #e94560;
+      color: var(--accent);
+      border: 1px solid var(--accent);
       border-radius: 6px;
       font-size: 14px;
       cursor: pointer;
-      transition: all 0.2s;
+      margin-top: 8px;
     }
+    .btn-secondary:hover { background: rgba(233, 69, 96, 0.1); }
 
-    .btn-delete:hover {
-      background: #e94560;
+    /* ===== 传统视图 ===== */
+    .classic-view {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #f5f0e8;
+      color: #333;
+    }
+    .classic-header {
+      text-align: center;
+      padding: 20px;
+      background: #fff;
+      border-bottom: 2px solid #d4c8b0;
+      flex-shrink: 0;
+    }
+    .classic-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2c2c2c;
+      margin-bottom: 6px;
+      letter-spacing: 4px;
+    }
+    .classic-header .subtitle {
+      font-size: 14px;
+      color: #888;
+    }
+    .classic-body {
+      flex: 1;
+      overflow: auto;
+      padding: 20px 40px 40px;
+    }
+    .storyboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .storyboard-cell {
+      background: #fff;
+      border: 1px solid #d4c8b0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .cell-image {
+      width: 100%;
+      height: 240px;
+      background: linear-gradient(135deg, #e8e0d4, #ddd5c8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cell-image .placeholder-text {
+      color: #999;
+      font-size: 14px;
+    }
+    .cell-annotations {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .arrow-annotation {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #333;
+      background: rgba(255,255,255,0.85);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .arrow-annotation .arrow { font-size: 14px; }
+    .cell-info {
+      padding: 12px 16px;
+      border-top: 1px solid #eee;
+    }
+    .cell-info-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .cell-number {
+      width: 28px;
+      height: 28px;
+      background: #333;
       color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .cell-shot-type {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+    }
+    .cell-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #444;
+      margin-bottom: 6px;
+    }
+    .cell-camera {
+      font-size: 12px;
+      color: #888;
+    }
+    .classic-footer {
+      background: #fff;
+      border-top: 1px solid #d4c8b0;
+      padding: 12px 40px;
+      font-size: 12px;
+      color: #888;
+      flex-shrink: 0;
     }
 
-    .canvas-area::-webkit-scrollbar { width: 8px; height: 8px; }
-    .canvas-area::-webkit-scrollbar-track { background: #16213e; }
-    .canvas-area::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 4px; }
-    .canvas-area::-webkit-scrollbar-thumb:hover { background: #1a4b7a; }
-    .side-panel::-webkit-scrollbar { width: 6px; }
-    .side-panel::-webkit-scrollbar-track { background: #16213e; }
-    .side-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    .classic-view ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+
+    /* 模拟图占位 */
+    .mock-image-1 { background: linear-gradient(135deg, #2a1a3a, #4a3050) !important; }
+    .mock-image-2 { background: linear-gradient(135deg, #1a2a3a, #2a4050) !important; }
+    .mock-image-3 { background: linear-gradient(135deg, #3a2a1a, #504030) !important; }
+    .mock-image-4 { background: linear-gradient(135deg, #1a3a2a, #2a5030) !important; }
+    .mock-image-5 { background: linear-gradient(135deg, #3a1a1a, #503030) !important; }
+    .mock-image-6 { background: linear-gradient(135deg, #2a2a3a, #404050) !important; }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      .storyboard-grid { grid-template-columns: 1fr; }
+      .detail-panel { width: 280px; }
+    }
   </style>
 </head>
 <body>
-  <div class="app">
+
+  <!-- ===== 上传页面 ===== -->
+  <div class="upload-page" id="uploadPage">
+    <h1>🎬 分镜画板工具</h1>
+    <div class="upload-box" id="uploadBox">
+      <div class="icon">📄</div>
+      <p>点击或拖拽上传剧本文件</p>
+      <p class="sub">支持 .txt / .docx / .pdf 格式</p>
+    </div>
+    <p style="color: #555; font-size: 13px;">原型演示：点击上方区域即可进入分镜预览</p>
+  </div>
+
+  <!-- ===== 现代视图 ===== -->
+  <div class="modern-view hidden" id="modernView">
     <header class="app-header">
-      <h1>🎬 分镜画板工具</h1>
-      <button class="btn-add" id="btnAdd">+ 新建分镜</button>
-    </header>
-    <div class="app-body">
-      <div class="canvas-area" id="canvasArea">
-        <div class="storyboard-canvas" id="canvas">
-          <div class="canvas-grid"></div>
-        </div>
+      <div class="left">
+        <button class="back-btn" id="btnBack1">← 返回</button>
+        <h2>《盛世庆典》第一场「天降异象」</h2>
+        <span class="scene-info">共 6 个镜头</span>
       </div>
-      <div class="side-panel empty" id="sidePanel">
-        <p>👈 在画布上选择一个分镜进行编辑</p>
+      <div class="view-tabs">
+        <button class="active" data-view="modern">🎨 现代画板</button>
+        <button data-view="classic">📋 分镜表</button>
+      </div>
+    </header>
+    <div class="modern-body">
+      <div class="modern-canvas-area">
+        <div class="shot-strip" id="shotStrip"></div>
+      </div>
+      <div class="detail-panel empty" id="detailPanel">
+        <div style="font-size: 48px; opacity: 0.3;">🎬</div>
+        <p>点击左侧分镜卡片<br>查看和编辑详情</p>
       </div>
     </div>
   </div>
 
+  <!-- ===== 传统视图 ===== -->
+  <div class="classic-view hidden" id="classicView">
+    <header class="app-header" style="background: #fff; color: #333; border-color: #d4c8b0;">
+      <div class="left">
+        <button class="back-btn" style="color: #666; border-color: #d4c8b0;" id="btnBack2">← 返回</button>
+        <h2>古风短片《雪廊一眼》分镜表</h2>
+        <span style="color: #888; font-size: 14px;">共 8 镜</span>
+      </div>
+      <div class="view-tabs" style="background: #f0ebe0;">
+        <button data-view="modern">🎨 现代画板</button>
+        <button class="active" data-view="classic">📋 分镜表</button>
+      </div>
+    </header>
+    <div class="classic-body">
+      <div class="storyboard-grid" id="storyboardGrid"></div>
+    </div>
+    <div class="classic-footer">
+      注：雪花、雾气、衣袖飘动贯穿全片，氛围清冷克制，情绪含蓄克制。
+    </div>
+  </div>
+
   <script>
-    let panels = [
-      { id: '1', title: '开场镜头', description: '远景，城市全景，日出', x: 100, y: 100, width: 240, height: 135, selected: false },
-      { id: '2', title: '角色登场', description: '中景，主角从画面左侧走入', x: 400, y: 100, width: 240, height: 135, selected: false },
-      { id: '3', title: '对话场景', description: '近景，双人对话，表情特写', x: 700, y: 100, width: 240, height: 135, selected: false },
+    // ===== 模拟数据：从剧本解析出来的分镜 =====
+    const mockShots = [
+      {
+        id: '1', number: 1,
+        title: '开场镜头',
+        scene: '第一场「天降异象」',
+        shotType: '全景',
+        cameraMove: '缓慢推进',
+        description: '雪夜庭院与廊桥，薄雾细雪，女子从右侧缓缓入画。远处灯火阑珊，雪花在灯笼光晕中飘舞。',
+        dialogue: '',
+        action: '人物向左前方移动，雪雾飘动',
+        duration: 5,
+        notes: '氛围清冷克制',
+        imageStyle: 'mock-image-1',
+      },
+      {
+        id: '2', number: 2,
+        title: '女子特写',
+        scene: '第一场「天降异象」',
+        shotType: '近景',
+        cameraMove: '镜头推近',
+        description: '女子低头看掌心玉坠，神情犹豫不舍，轻轻握紧。发丝在微风中轻轻飘动。',
+        dialogue: '（内心独白）此去经年，不知何日再见……',
+        action: '轻轻握紧玉坠',
+        duration: 4,
+        notes: '表情特写，情绪含蓄',
+        imageStyle: 'mock-image-2',
+      },
+      {
+        id: '3', number: 3,
+        title: '男子背影',
+        scene: '第一场「天降异象」',
+        shotType: '中远景',
+        cameraMove: '镜头右移/跟移',
+        description: '白衣男子背对站在廊下，听见脚步声后微微侧身回头。廊外雪夜朦胧，灯火摇曳。',
+        dialogue: '',
+        action: '微微侧身回头',
+        duration: 4,
+        notes: '背影构图，悬念感',
+        imageStyle: 'mock-image-3',
+      },
+      {
+        id: '4', number: 4,
+        title: '双人相望',
+        scene: '第一场「天降异象」',
+        shotType: '双人中景',
+        cameraMove: '镜头轻推',
+        description: '两人隔着几步距离相望，女子前景右，男子廊下左。风吹衣袖，雪花飘落。',
+        dialogue: '',
+        action: '相望，几步距离',
+        duration: 6,
+        notes: '眼神交流关键帧',
+        imageStyle: 'mock-image-4',
+      },
+      {
+        id: '5', number: 5,
+        title: '手部特写',
+        scene: '第一场「天降异象」',
+        shotType: '特写',
+        cameraMove: '镜头推近',
+        description: '女子递出玉坠，男子伸手接过，指尖接近未触碰。玉坠在雪光中微微发亮。',
+        dialogue: '',
+        action: '递出玉坠，指尖接近',
+        duration: 5,
+        notes: '画面重点：玉坠',
+        imageStyle: 'mock-image-5',
+      },
+      {
+        id: '6', number: 6,
+        title: '情绪停顿',
+        scene: '第一场「天降异象」',
+        shotType: '双人近景',
+        cameraMove: '镜头轻推',
+        description: '女子抬眼，勉强露出淡笑；男子低头看玉坠，眉眼微动，欲言又止。',
+        dialogue: '……',
+        action: '停顿，微推',
+        duration: 4,
+        notes: '情绪高潮点',
+        imageStyle: 'mock-image-6',
+      },
+      {
+        id: '7', number: 7,
+        title: '女子离去',
+        scene: '第一场「天降异象」',
+        shotType: '中景',
+        cameraMove: '镜头跟随',
+        description: '女子转身离开，向廊桥深处走去；男子原地未追。背影渐远，雪越下越大。',
+        dialogue: '',
+        action: '女子远离，镜头跟随',
+        duration: 6,
+        notes: '离别氛围',
+        imageStyle: 'mock-image-1',
+      },
+      {
+        id: '8', number: 8,
+        title: '收束远景',
+        scene: '第一场「天降异象」',
+        shotType: '远景',
+        cameraMove: '镜头缓慢拉远',
+        description: '男子独自立于画面中，手中玉坠微垂，望向女子离去方向。雪雾弥漫，灯火渐暗。',
+        dialogue: '',
+        action: '雪雾流动',
+        duration: 7,
+        notes: '收尾镜头',
+        imageStyle: 'mock-image-2',
+      },
     ];
+
     let selectedId = null;
-    let dragging = null;
+    let currentView = 'modern';
+    let shots = JSON.parse(JSON.stringify(mockShots));
 
-    const canvas = document.getElementById('canvas');
-    const sidePanel = document.getElementById('sidePanel');
-    const btnAdd = document.getElementById('btnAdd');
+    // ===== DOM 元素 =====
+    const uploadPage = document.getElementById('uploadPage');
+    const uploadBox = document.getElementById('uploadBox');
+    const modernView = document.getElementById('modernView');
+    const classicView = document.getElementById('classicView');
+    const shotStrip = document.getElementById('shotStrip');
+    const detailPanel = document.getElementById('detailPanel');
+    const storyboardGrid = document.getElementById('storyboardGrid');
 
-    function renderPanels() {
-      const oldCards = canvas.querySelectorAll('.panel-card');
-      oldCards.forEach(c => c.remove());
+    // ===== 上传页面交互 =====
+    uploadBox.addEventListener('click', () => {
+      uploadPage.classList.add('hidden');
+      showView('modern');
+    });
 
-      panels.forEach(panel => {
+    // ===== 视图切换 =====
+    function showView(view) {
+      currentView = view;
+      modernView.classList.toggle('hidden', view !== 'modern');
+      classicView.classList.toggle('hidden', view !== 'classic');
+
+      // 更新 tab 按钮状态
+      document.querySelectorAll('.view-tabs button').forEach(btn => {
+        const isActive = btn.dataset.view === view;
+        btn.classList.toggle('active', isActive);
+      });
+
+      if (view === 'modern') {
+        renderModern();
+      } else {
+        renderClassic();
+      }
+    }
+
+    // 绑定所有 view-tabs 按钮
+    document.querySelectorAll('.view-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showView(btn.dataset.view);
+      });
+    });
+
+    // 返回按钮
+    document.getElementById('btnBack1').addEventListener('click', () => {
+      uploadPage.classList.remove('hidden');
+      modernView.classList.add('hidden');
+      classicView.classList.add('hidden');
+      selectedId = null;
+    });
+    document.getElementById('btnBack2').addEventListener('click', () => {
+      uploadPage.classList.remove('hidden');
+      modernView.classList.add('hidden');
+      classicView.classList.add('hidden');
+      selectedId = null;
+    });
+
+    // ===== 现代视图渲染 =====
+    function renderModern() {
+      shotStrip.innerHTML = '';
+      shots.forEach(shot => {
         const card = document.createElement('div');
-        card.className = 'panel-card' + (panel.selected ? ' selected' : '');
-        card.style.left = panel.x + 'px';
-        card.style.top = panel.y + 'px';
-        card.style.width = panel.width + 'px';
-        card.style.height = panel.height + 'px';
-        card.dataset.id = panel.id;
-
+        card.className = 'shot-card' + (shot.id === selectedId ? ' selected' : '');
         card.innerHTML = `
-          <div class="panel-header">
-            <span class="panel-number">#${panel.id}</span>
-            <span class="panel-title">${escapeHtml(panel.title)}</span>
-          </div>
-          <div class="panel-body">
-            <div class="panel-placeholder">
-              <span>🖼️</span>
-              <small>点击添加参考图</small>
+          <div class="shot-header">
+            <span class="shot-number">${shot.number}</span>
+            <span style="flex:1; font-weight:500;">${escapeHtml(shot.title)}</span>
+            <div class="shot-meta">
+              <span class="meta-tag">${shot.shotType}</span>
+              <span class="meta-tag">${shot.duration}s</span>
             </div>
           </div>
-          <div class="panel-footer">
-            <span>${escapeHtml(panel.description) || '暂无描述'}</span>
+          <div class="shot-image ${shot.imageStyle}">
+            <div class="placeholder-text">
+              🎨 AI 参考图<br><small>点击生成</small>
+            </div>
+            <span class="ai-badge">AI 生成</span>
           </div>
-          ${panel.selected ? `
-            <div class="resize-handle nw"></div>
-            <div class="resize-handle ne"></div>
-            <div class="resize-handle sw"></div>
-            <div class="resize-handle se"></div>
-          ` : ''}
+          <div class="shot-content">
+            <div class="shot-field">
+              <label>画面描述</label>
+              <div class="value">${escapeHtml(shot.description)}</div>
+            </div>
+            ${shot.dialogue ? `
+            <div class="shot-field">
+              <label>对白 / 旁白</label>
+              <div class="value dialogue">${escapeHtml(shot.dialogue)}</div>
+            </div>` : ''}
+            <div class="shot-field">
+              <label>镜头运动</label>
+              <div class="value">${escapeHtml(shot.cameraMove)}</div>
+            </div>
+          </div>
         `;
-
-        card.addEventListener('mousedown', (e) => {
-          e.stopPropagation();
-          selectPanel(panel.id);
-          dragging = {
-            id: panel.id,
-            offsetX: e.clientX - panel.x,
-            offsetY: e.clientY - panel.y,
-          };
+        card.addEventListener('click', () => {
+          selectedId = shot.id;
+          renderModern();
+          renderDetailPanel();
         });
-
-        canvas.appendChild(card);
+        shotStrip.appendChild(card);
       });
     }
 
-    function renderPanel() {
-      const panel = panels.find(p => p.id === selectedId) || null;
-
-      if (!panel) {
-        sidePanel.className = 'side-panel empty';
-        sidePanel.innerHTML = '<p>👈 在画布上选择一个分镜进行编辑</p>';
+    // ===== 右侧详情面板 =====
+    function renderDetailPanel() {
+      const shot = shots.find(s => s.id === selectedId);
+      if (!shot) {
+        detailPanel.className = 'detail-panel empty';
+        detailPanel.innerHTML = `
+          <div style="font-size:48px; opacity:0.3;">🎬</div>
+          <p style="text-align:center; line-height:1.8;">点击左侧分镜卡片<br>查看和编辑详情</p>
+        `;
         return;
       }
 
-      sidePanel.className = 'side-panel';
-      sidePanel.innerHTML = `
-        <h3>✏️ 分镜属性</h3>
+      detailPanel.className = 'detail-panel';
+      detailPanel.innerHTML = `
+        <h3>✏️ 镜头 #${shot.number} 详情</h3>
         <div class="form-group">
-          <label>标题</label>
-          <input type="text" id="inputTitle" value="${escapeHtml(panel.title)}">
+          <label>镜头标题</label>
+          <input type="text" id="dTitle" value="${escapeHtml(shot.title)}">
         </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea id="inputDesc" rows="4">${escapeHtml(panel.description)}</textarea>
-        </div>
-        <div class="form-group">
-          <label>位置</label>
-          <div class="input-row">
-            <input type="number" id="inputX" value="${Math.round(panel.x)}">
-            <input type="number" id="inputY" value="${Math.round(panel.y)}">
+        <div class="form-row">
+          <div class="form-group">
+            <label>景别</label>
+            <select id="dShotType">
+              <option ${shot.shotType==='全景'?'selected':''}>全景</option>
+              <option ${shot.shotType==='远景'?'selected':''}>远景</option>
+              <option ${shot.shotType==='中景'?'selected':''}>中景</option>
+              <option ${shot.shotType==='近景'?'selected':''}>近景</option>
+              <option ${shot.shotType==='特写'?'selected':''}>特写</option>
+              <option ${shot.shotType==='双人中景'?'selected':''}>双人中景</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>时长(秒)</label>
+            <input type="number" id="dDuration" value="${shot.duration}">
           </div>
         </div>
         <div class="form-group">
-          <label>尺寸</label>
-          <div class="input-row">
-            <input type="number" id="inputW" value="${panel.width}">
-            <span>×</span>
-            <input type="number" id="inputH" value="${panel.height}">
-          </div>
+          <label>镜头运动</label>
+          <input type="text" id="dCamera" value="${escapeHtml(shot.cameraMove)}">
         </div>
-        <div class="form-actions">
-          <button class="btn-delete" id="btnDelete">🗑️ 删除分镜</button>
+        <div class="form-group">
+          <label>画面描述</label>
+          <textarea id="dDesc" rows="3">${escapeHtml(shot.description)}</textarea>
         </div>
+        <div class="form-group">
+          <label>对白 / 旁白</label>
+          <textarea id="dDialogue" rows="2">${escapeHtml(shot.dialogue)}</textarea>
+        </div>
+        <div class="form-group">
+          <label>动作说明</label>
+          <input type="text" id="dAction" value="${escapeHtml(shot.action)}">
+        </div>
+        <div class="form-group">
+          <label>备注</label>
+          <input type="text" id="dNotes" value="${escapeHtml(shot.notes)}">
+        </div>
+        <button class="btn-primary" id="dRegen">🎨 重新生成参考图</button>
+        <button class="btn-secondary" id="dDelete">🗑️ 删除镜头</button>
       `;
 
-      document.getElementById('inputTitle').addEventListener('input', (e) => {
-        panel.title = e.target.value;
-        renderPanels();
-      });
-      document.getElementById('inputDesc').addEventListener('input', (e) => {
-        panel.description = e.target.value;
-        renderPanels();
-      });
-      document.getElementById('inputX').addEventListener('input', (e) => {
-        panel.x = Number(e.target.value);
-        renderPanels();
-      });
-      document.getElementById('inputY').addEventListener('input', (e) => {
-        panel.y = Number(e.target.value);
-        renderPanels();
-      });
-      document.getElementById('inputW').addEventListener('input', (e) => {
-        panel.width = Number(e.target.value);
-        renderPanels();
-      });
-      document.getElementById('inputH').addEventListener('input', (e) => {
-        panel.height = Number(e.target.value);
-        renderPanels();
-      });
-      document.getElementById('btnDelete').addEventListener('click', () => {
-        deletePanel(panel.id);
-      });
-    }
-
-    function selectPanel(id) {
-      selectedId = id;
-      panels.forEach(p => p.selected = (p.id === id));
-      renderPanels();
-      renderPanel();
-    }
-
-    function deletePanel(id) {
-      panels = panels.filter(p => p.id !== id);
-      selectedId = null;
-      renderPanels();
-      renderPanel();
-    }
-
-    function addPanel() {
-      const newPanel = {
-        id: Date.now().toString(),
-        title: `分镜 ${panels.length + 1}`,
-        description: '',
-        x: 100 + panels.length * 50,
-        y: 100 + panels.length * 50,
-        width: 240,
-        height: 135,
-        selected: false,
+      // 绑定输入事件，实时更新
+      const updateShot = () => {
+        shot.title = document.getElementById('dTitle').value;
+        shot.shotType = document.getElementById('dShotType').value;
+        shot.duration = Number(document.getElementById('dDuration').value);
+        shot.cameraMove = document.getElementById('dCamera').value;
+        shot.description = document.getElementById('dDesc').value;
+        shot.dialogue = document.getElementById('dDialogue').value;
+        shot.action = document.getElementById('dAction').value;
+        shot.notes = document.getElementById('dNotes').value;
+        renderModern();
       };
-      panels.push(newPanel);
-      renderPanels();
-      selectPanel(newPanel.id);
+
+      ['dTitle','dCamera','dDesc','dDialogue','dAction','dNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateShot);
+      });
+      ['dShotType','dDuration'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', updateShot);
+      });
+
+      document.getElementById('dRegen').addEventListener('click', () => {
+        alert('🎨 正在调用 AI 生成参考图……\n（原型演示：此功能将在正式版中连接 AI 绘图 API）');
+      });
+      document.getElementById('dDelete').addEventListener('click', () => {
+        if (confirm('确定删除此镜头吗？')) {
+          shots = shots.filter(s => s.id !== shot.id);
+          selectedId = null;
+          renderModern();
+          renderDetailPanel();
+        }
+      });
     }
 
-    window.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
-      const p = panels.find(p => p.id === dragging.id);
-      if (p) {
-        p.x = e.clientX - dragging.offsetX;
-        p.y = e.clientY - dragging.offsetY;
-        renderPanels();
-        if (selectedId === dragging.id) {
-          const inputX = document.getElementById('inputX');
-          const inputY = document.getElementById('inputY');
-          if (inputX) inputX.value = Math.round(p.x);
-          if (inputY) inputY.value = Math.round(p.y);
+    // ===== 传统视图渲染 =====
+    function renderClassic() {
+      storyboardGrid.innerHTML = '';
+      shots.forEach(shot => {
+        const cell = document.createElement('div');
+        cell.className = 'storyboard-cell';
+
+        // 箭头标注位置（模拟）
+        let annotations = '';
+        if (shot.cameraMove.includes('推')) {
+          annotations += `<div class="arrow-annotation" style="top:10px;left:50%;transform:translateX(-50%);"><span class="arrow">←</span> ${shot.cameraMove}</div>`;
         }
-      }
-    });
+        if (shot.action.includes('移动') || shot.action.includes('远离')) {
+          annotations += `<div class="arrow-annotation" style="bottom:40px;left:20px;"><span class="arrow">→</span> ${shot.action}</div>`;
+        }
 
-    window.addEventListener('mouseup', () => {
-      dragging = null;
-    });
+        cell.innerHTML = `
+          <div class="cell-image ${shot.imageStyle}">
+            <div class="placeholder-text">🎨<br>AI 参考图</div>
+            <div class="cell-annotations">${annotations}</div>
+          </div>
+          <div class="cell-info">
+            <div class="cell-info-top">
+              <span class="cell-number">${shot.number}</span>
+              <span class="cell-shot-type">${shot.shotType}</span>
+            </div>
+            <div class="cell-desc">${escapeHtml(shot.description)}</div>
+            <div class="cell-camera">镜头：${escapeHtml(shot.cameraMove)}${shot.action ? ` · ${escapeHtml(shot.action)}` : ''}</div>
+          </div>
+        `;
+        storyboardGrid.appendChild(cell);
+      });
+    }
 
-    canvas.addEventListener('click', (e) => {
-      if (e.target === canvas || e.target.classList.contains('canvas-grid')) {
-        selectPanel(null);
-      }
-    });
-
-    btnAdd.addEventListener('click', addPanel);
-
+    // ===== 工具函数 =====
     function escapeHtml(text) {
       const div = document.createElement('div');
-      div.textContent = text;
+      div.textContent = text || '';
       return div.innerHTML;
     }
 
-    renderPanels();
+    // 初始化
+    renderModern();
   </script>
 </body>
 </html>
