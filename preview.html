@@ -30,7 +30,7 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      gap: 20px;
+      gap: 16px;
       padding: 40px;
     }
     .upload-page h1 {
@@ -41,18 +41,18 @@
     .upload-page .subtitle {
       color: #888;
       font-size: 14px;
-      margin-top: -16px;
+      margin-top: -12px;
     }
     .upload-box {
       width: 560px;
-      height: 200px;
+      height: 180px;
       border: 2px dashed var(--border);
       border-radius: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       cursor: pointer;
       transition: all 0.3s;
     }
@@ -60,7 +60,7 @@
       border-color: var(--accent);
       background: rgba(233, 69, 96, 0.05);
     }
-    .upload-box .icon { font-size: 52px; opacity: 0.6; }
+    .upload-box .icon { font-size: 48px; opacity: 0.6; }
     .upload-box p { color: var(--text-dim); font-size: 15px; }
     .upload-box .sub { font-size: 12px; color: #666; }
     .script-editor { width: 560px; }
@@ -69,7 +69,7 @@
       width: 100%; padding: 12px; background: var(--bg-panel);
       border: 1px solid var(--border); border-radius: 8px;
       color: var(--text); font-size: 14px; font-family: inherit;
-      resize: vertical; min-height: 120px; outline: none;
+      resize: vertical; min-height: 100px; outline: none;
     }
     .script-editor textarea:focus { border-color: var(--accent); }
     .upload-actions { display: flex; gap: 10px; }
@@ -86,6 +86,22 @@
     .btn-config:hover { border-color: #aaa; color: #eee; }
     .btn-config.ok { border-color: #4caf50; color: #4caf50; }
 
+    /* 模型选择器 */
+    .model-selectors {
+      display: flex; gap: 12px; width: 560px;
+    }
+    .model-select-box {
+      flex: 1; padding: 8px 12px; background: var(--bg-panel);
+      border: 1px solid var(--border); border-radius: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .model-select-box label { font-size: 11px; color: #888; white-space: nowrap; }
+    .model-select-box select {
+      flex: 1; background: transparent; border: none; color: #eee;
+      font-size: 13px; outline: none; cursor: pointer;
+    }
+    .model-select-box select option { background: var(--bg-panel); color: #eee; }
+
     /* ===== 弹窗 ===== */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.6);
@@ -93,7 +109,7 @@
     }
     .modal-content {
       background: var(--bg-panel); border: 1px solid var(--border);
-      border-radius: 12px; width: 520px; max-height: 85vh;
+      border-radius: 12px; width: 560px; max-height: 85vh;
       overflow: hidden; display: flex; flex-direction: column;
     }
     .modal-header {
@@ -103,6 +119,66 @@
     .modal-header h3 { font-size: 15px; }
     .btn-close { background: transparent; border: none; color: #888; font-size: 18px; cursor: pointer; }
     .btn-close:hover { color: #eee; }
+
+    /* 配置列表 */
+    .config-list { padding: 10px 18px; overflow-y: auto; flex: 1; }
+    .config-list-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px;
+    }
+    .config-list-header span { font-size: 12px; color: #888; }
+    .btn-add-config {
+      padding: 4px 12px; background: var(--accent); color: #fff;
+      border: none; border-radius: 5px; font-size: 12px; cursor: pointer;
+    }
+    .config-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; background: var(--bg-dark);
+      border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .config-item:hover { border-color: var(--accent); }
+    .config-item.active { border-color: var(--accent); background: rgba(233,69,96,0.08); }
+    .config-item .cfg-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .config-item .cfg-tag {
+      font-size: 10px; padding: 2px 6px; border-radius: 3px;
+      background: rgba(255,255,255,0.08); color: #aaa;
+    }
+    .config-item .cfg-actions {
+      display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s;
+    }
+    .config-item:hover .cfg-actions { opacity: 1; }
+    .cfg-btn {
+      padding: 3px 8px; background: transparent; border: 1px solid var(--border);
+      border-radius: 4px; color: #aaa; font-size: 11px; cursor: pointer;
+    }
+    .cfg-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cfg-btn.danger:hover { border-color: #ff4444; color: #ff4444; }
+
+    /* 编辑表单 */
+    .config-edit { padding: 14px 18px; overflow-y: auto; flex: 1; }
+    .edit-back {
+      display: flex; align-items: center; gap: 6px; color: #888;
+      font-size: 12px; cursor: pointer; margin-bottom: 12px;
+    }
+    .edit-back:hover { color: #eee; }
+    .config-tabs {
+      display: flex; gap: 4px; margin-bottom: 12px;
+    }
+    .config-tabs button {
+      padding: 7px 14px; background: transparent; border: none;
+      border-bottom: 2px solid transparent; color: #888;
+      font-size: 12px; cursor: pointer;
+    }
+    .config-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .config-section { display: none; }
+    .config-section.active { display: block; }
+    .modal-actions {
+      display: flex; gap: 10px; padding: 10px 18px 14px;
+      border-top: 1px solid var(--border); justify-content: flex-end;
+    }
+
+    /* 预设按钮 */
     .preset-buttons {
       display: flex; gap: 6px; padding: 10px 18px;
       border-bottom: 1px solid var(--border); align-items: center;
@@ -113,20 +189,27 @@
       border-radius: 4px; color: #aaa; font-size: 11px; cursor: pointer;
     }
     .preset-btn:hover { border-color: var(--accent); color: #eee; }
-    .config-tabs {
-      display: flex; gap: 4px; padding: 10px 18px 0;
+
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 6px 9px; background: var(--bg-dark);
+      border: 1px solid var(--border); border-radius: 5px;
+      color: #eee; font-size: 12px; outline: none; font-family: inherit;
     }
-    .config-tabs button {
-      padding: 7px 14px; background: transparent; border: none;
-      border-bottom: 2px solid transparent; color: #888;
-      font-size: 12px; cursor: pointer;
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 45px; }
+    .form-row { display: flex; gap: 8px; }
+    .form-row .form-group { flex: 1; }
+    .btn-primary, .btn-secondary {
+      padding: 8px 18px; border-radius: 5px;
+      font-size: 12px; cursor: pointer; border: none;
     }
-    .config-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .config-section { padding: 14px 18px; overflow-y: auto; flex: 1; }
-    .modal-actions {
-      display: flex; gap: 10px; padding: 10px 18px 14px;
-      border-top: 1px solid var(--border); justify-content: flex-end;
-    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #c73a50; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-secondary:hover { background: rgba(233, 69, 96, 0.1); }
 
     /* ===== 分镜应用 ===== */
     .storyboard-app { display: flex; flex-direction: column; height: 100vh; }
@@ -152,6 +235,16 @@
       background: transparent; color: #888; font-size: 12px; cursor: pointer;
     }
     .view-tabs button.active { background: var(--accent); color: #fff; }
+    .header-model-select {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .header-model-select select {
+      background: var(--bg-dark); border: 1px solid var(--border);
+      color: #aaa; font-size: 11px; padding: 3px 6px; border-radius: 4px;
+      outline: none; cursor: pointer;
+    }
+    .header-model-select select option { background: var(--bg-panel); color: #eee; }
+    .header-model-select label { font-size: 10px; color: #666; }
     .btn-config-header {
       background: transparent; border: 1px solid var(--border); color: #888;
       padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer;
@@ -248,26 +341,6 @@
       font-size: 14px; margin-bottom: 12px;
       padding-bottom: 9px; border-bottom: 1px solid var(--border);
     }
-    .form-group { margin-bottom: 10px; }
-    .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
-    .form-group input, .form-group textarea, .form-group select {
-      width: 100%; padding: 6px 9px; background: var(--bg-dark);
-      border: 1px solid var(--border); border-radius: 5px;
-      color: #eee; font-size: 12px; outline: none; font-family: inherit;
-    }
-    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
-    .form-group textarea { resize: vertical; min-height: 45px; }
-    .form-row { display: flex; gap: 8px; }
-    .form-row .form-group { flex: 1; }
-    .btn-primary, .btn-secondary {
-      width: 100%; padding: 8px; border-radius: 5px;
-      font-size: 12px; cursor: pointer; margin-top: 5px; border: none;
-    }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: #c73a50; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-    .btn-secondary:hover { background: rgba(233, 69, 96, 0.1); }
 
     /* ===== 传统视图 ===== */
     .classic-body-view { flex: 1; overflow: auto; background: #f5f0e8; color: #333; }
@@ -331,6 +404,7 @@
       .detail-panel { width: 240px; }
       .upload-box { width: 90%; }
       .script-editor { width: 90%; }
+      .model-selectors { width: 90%; flex-direction: column; }
       .modal-content { width: 90%; }
     }
   </style>
@@ -354,12 +428,23 @@
       <textarea id="scriptText" rows="8" placeholder="在此粘贴剧本内容……"></textarea>
     </div>
 
+    <div class="model-selectors" id="modelSelectors">
+      <div class="model-select-box">
+        <label>📝 文本模型</label>
+        <select id="selectTextModel"><option>请先配置 API</option></select>
+      </div>
+      <div class="model-select-box">
+        <label>🎨 生图模型</label>
+        <select id="selectImageModel"><option>请先配置 API</option></select>
+      </div>
+    </div>
+
     <div class="upload-actions">
       <button class="btn-config" id="btnConfig">⚙️ 配置 API</button>
       <button class="btn-parse" id="btnParse">🤖 AI 解析剧本</button>
     </div>
     <p id="apiHint" style="color: #e94560; font-size: 12px; display: none;">
-      ⚠️ 请先配置文本大模型 API
+      ⚠️ 请先配置至少一套文本大模型 API
     </p>
   </div>
 
@@ -367,70 +452,90 @@
   <div class="modal-overlay hidden" id="configModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>⚙️ API 配置</h3>
+        <h3>⚙️ API 配置管理</h3>
         <button class="btn-close" id="btnCloseConfig">✕</button>
       </div>
-      <div class="preset-buttons">
-        <label>快速选择：</label>
-        <button class="preset-btn" data-preset="openai">OpenAI</button>
-        <button class="preset-btn" data-preset="moonshot">Moonshot</button>
-        <button class="preset-btn" data-preset="deepseek">DeepSeek</button>
-        <button class="preset-btn" data-preset="siliconflow">SiliconFlow</button>
-        <button class="preset-btn" data-preset="custom">自定义</button>
-      </div>
-      <div class="config-tabs">
-        <button class="active" data-tab="text">📝 文本大模型</button>
-        <button data-tab="image">🎨 生图大模型</button>
-      </div>
 
-      <!-- 文本模型配置 -->
-      <div class="config-section" id="tabText">
-        <div class="form-group">
-          <label>Base URL</label>
-          <input type="text" id="textBaseUrl" placeholder="https://api.openai.com/v1">
-        </div>
-        <div class="form-group">
-          <label>API Key</label>
-          <input type="password" id="textApiKey" placeholder="sk-...">
-        </div>
-        <div class="form-group">
-          <label>模型名称</label>
-          <input type="text" id="textModel" placeholder="gpt-4o">
-        </div>
-        <div class="form-group">
-          <label>System Prompt（系统提示词）</label>
-          <textarea id="textSystemPrompt" rows="5" style="font-size:11px;"></textarea>
+      <!-- 配置列表视图 -->
+      <div id="configListView">
+        <div class="config-list">
+          <div class="config-list-header">
+            <span>已保存的配置</span>
+            <button class="btn-add-config" id="btnAddConfig">＋ 新建配置</button>
+          </div>
+          <div id="configListContainer"></div>
         </div>
       </div>
 
-      <!-- 生图模型配置 -->
-      <div class="config-section hidden" id="tabImage">
-        <div class="form-group">
-          <label>Base URL</label>
-          <input type="text" id="imageBaseUrl" placeholder="https://api.openai.com/v1">
+      <!-- 配置编辑视图 -->
+      <div id="configEditView" class="hidden">
+        <div class="preset-buttons">
+          <label>快速选择：</label>
+          <button class="preset-btn" data-preset="openai">OpenAI</button>
+          <button class="preset-btn" data-preset="moonshot">Moonshot</button>
+          <button class="preset-btn" data-preset="deepseek">DeepSeek</button>
+          <button class="preset-btn" data-preset="siliconflow">SiliconFlow</button>
+          <button class="preset-btn" data-preset="custom">自定义</button>
         </div>
-        <div class="form-group">
-          <label>API Key</label>
-          <input type="password" id="imageApiKey" placeholder="sk-...">
-        </div>
-        <div class="form-group">
-          <label>模型名称</label>
-          <input type="text" id="imageModel" placeholder="dall-e-3">
-        </div>
-        <div class="form-group">
-          <label>图片尺寸</label>
-          <select id="imageSize">
-            <option value="1024x1024">1024x1024</option>
-            <option value="1024x1792">1024x1792 (竖版)</option>
-            <option value="1792x1024">1792x1024 (横版)</option>
-            <option value="512x512">512x512</option>
-          </select>
-        </div>
-      </div>
+        <div class="config-edit">
+          <div class="edit-back" id="btnEditBack">← 返回配置列表</div>
+          <div class="form-group">
+            <label>配置名称</label>
+            <input type="text" id="cfgName" placeholder="例如：OpenAI 全栈">
+          </div>
+          <div class="config-tabs">
+            <button class="active" data-tab="text">📝 文本大模型</button>
+            <button data-tab="image">🎨 生图大模型</button>
+          </div>
 
-      <div class="modal-actions">
-        <button class="btn-secondary" id="btnResetConfig" style="width:auto; padding: 6px 14px;">恢复默认</button>
-        <button class="btn-primary" id="btnSaveConfig" style="width:auto; padding: 6px 20px;">保存配置</button>
+          <div class="config-section active" id="tabText">
+            <div class="form-group">
+              <label>Base URL</label>
+              <input type="text" id="textBaseUrl" placeholder="https://api.openai.com/v1">
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <input type="password" id="textApiKey" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+              <label>模型名称</label>
+              <input type="text" id="textModel" placeholder="gpt-4o">
+            </div>
+            <div class="form-group">
+              <label>System Prompt（系统提示词）</label>
+              <textarea id="textSystemPrompt" rows="5" style="font-size:11px;"></textarea>
+            </div>
+          </div>
+
+          <div class="config-section" id="tabImage">
+            <div class="form-group">
+              <label>Base URL</label>
+              <input type="text" id="imageBaseUrl" placeholder="https://api.openai.com/v1">
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <input type="password" id="imageApiKey" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+              <label>模型名称</label>
+              <input type="text" id="imageModel" placeholder="dall-e-3">
+            </div>
+            <div class="form-group">
+              <label>图片尺寸</label>
+              <select id="imageSize">
+                <option value="1024x1024">1024x1024</option>
+                <option value="1024x1792">1024x1792 (竖版)</option>
+                <option value="1792x1024">1792x1024 (横版)</option>
+                <option value="512x512">512x512</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="btnDeleteConfig" style="margin-right:auto;">🗑️ 删除</button>
+          <button class="btn-secondary" id="btnResetConfig">恢复默认</button>
+          <button class="btn-primary" id="btnSaveConfig">保存配置</button>
+        </div>
       </div>
     </div>
   </div>
@@ -447,7 +552,13 @@
         <button class="active" data-view="modern">🎨 现代画板</button>
         <button data-view="classic">📋 分镜表</button>
       </div>
-      <button class="btn-config-header" id="btnConfigHeader">⚙️ API</button>
+      <div class="header-model-select">
+        <label>📝</label>
+        <select id="headerSelectText"></select>
+        <label>🎨</label>
+        <select id="headerSelectImage"></select>
+        <button class="btn-config-header" id="btnConfigHeader">⚙️</button>
+      </div>
     </header>
     <div class="app-body">
       <div class="modern-layout">
@@ -474,7 +585,13 @@
         <button data-view="modern">🎨 现代画板</button>
         <button class="active" data-view="classic">📋 分镜表</button>
       </div>
-      <button class="btn-config-header" style="color:#666; border-color:#d4c8b0;" id="btnConfigHeader2">⚙️ API</button>
+      <div class="header-model-select">
+        <label>📝</label>
+        <select id="headerSelectText2"></select>
+        <label>🎨</label>
+        <select id="headerSelectImage2"></select>
+        <button class="btn-config-header" style="color:#666; border-color:#d4c8b0;" id="btnConfigHeader2">⚙️</button>
+      </div>
     </header>
     <div class="classic-body-view">
       <div class="classic-body">
@@ -488,7 +605,7 @@
 
   <script>
     // ===================== 默认配置 =====================
-    const DEFAULT_CONFIG = {
+    const DEFAULT_SINGLE_CONFIG = {
       textBaseUrl: 'https://api.openai.com/v1',
       textApiKey: '',
       textModel: 'gpt-4o',
@@ -516,6 +633,12 @@
       imageSize: '1024x1024',
     };
 
+    const DEFAULT_CONFIGS = {
+      configs: [{ id: 'cfg_default', name: '默认配置', ...DEFAULT_SINGLE_CONFIG }],
+      activeTextConfigId: 'cfg_default',
+      activeImageConfigId: 'cfg_default',
+    };
+
     const PRESETS = {
       openai: {
         textBaseUrl: 'https://api.openai.com/v1', textModel: 'gpt-4o',
@@ -537,22 +660,53 @@
     };
 
     // ===================== 状态 =====================
-    let config = loadConfig();
+    let appState = loadAppState();
     let shots = [];
     let selectedId = null;
     let currentView = 'modern';
     let generatingMap = {};
+    let editingConfigId = null; // null = 新建, string = 编辑
 
     // ===================== 工具函数 =====================
-    function loadConfig() {
-      try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('sb-api-config') || '{}') }; }
-      catch { return { ...DEFAULT_CONFIG }; }
+    function loadAppState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('sb-api-config') || '{}');
+        // 兼容旧版单配置格式
+        if (saved.configs && Array.isArray(saved.configs)) {
+          return { ...DEFAULT_CONFIGS, ...saved };
+        }
+        // 旧版迁移：单配置 -> 多配置
+        if (saved.textBaseUrl !== undefined) {
+          const migrated = {
+            configs: [{ id: 'cfg_default', name: '已迁移配置', ...saved }],
+            activeTextConfigId: 'cfg_default',
+            activeImageConfigId: 'cfg_default',
+          };
+          return migrated;
+        }
+      } catch {}
+      return JSON.parse(JSON.stringify(DEFAULT_CONFIGS));
     }
-    function saveConfig() { localStorage.setItem('sb-api-config', JSON.stringify(config)); }
+    function saveAppState() { localStorage.setItem('sb-api-config', JSON.stringify(appState)); }
     function escapeHtml(text) {
       const div = document.createElement('div'); div.textContent = text || ''; return div.innerHTML;
     }
-    function isApiConfigured() { return !!(config.textApiKey && config.textBaseUrl); }
+    function genId() { return 'cfg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+
+    function getTextConfig() {
+      return appState.configs.find(c => c.id === appState.activeTextConfigId) || appState.configs[0];
+    }
+    function getImageConfig() {
+      return appState.configs.find(c => c.id === appState.activeImageConfigId) || appState.configs[0];
+    }
+    function isTextApiConfigured() {
+      const cfg = getTextConfig();
+      return !!(cfg && cfg.textApiKey && cfg.textBaseUrl);
+    }
+    function isImageApiConfigured() {
+      const cfg = getImageConfig();
+      return !!(cfg && cfg.imageApiKey && cfg.imageBaseUrl);
+    }
 
     // ===================== DOM 元素 =====================
     const uploadPage = document.getElementById('uploadPage');
@@ -568,6 +722,15 @@
     const detailPanel = document.getElementById('detailPanel');
     const shotCount = document.getElementById('shotCount');
     const shotCount2 = document.getElementById('shotCount2');
+    const configListView = document.getElementById('configListView');
+    const configEditView = document.getElementById('configEditView');
+    const configListContainer = document.getElementById('configListContainer');
+    const selectTextModel = document.getElementById('selectTextModel');
+    const selectImageModel = document.getElementById('selectImageModel');
+    const headerSelectText = document.getElementById('headerSelectText');
+    const headerSelectImage = document.getElementById('headerSelectImage');
+    const headerSelectText2 = document.getElementById('headerSelectText2');
+    const headerSelectImage2 = document.getElementById('headerSelectImage2');
 
     // ===================== 上传页面交互 =====================
     document.getElementById('uploadBox').addEventListener('click', () => document.getElementById('fileInput').click());
@@ -576,55 +739,193 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = (ev) => { scriptText.value = ev.target.result; };
-        reader.readAsText(file);
+        reader.onerror = () => { alert('文件读取失败，请尝试手动粘贴内容'); };
+        reader.readAsText(file, 'UTF-8');
       }
     });
     ['dragover','dragenter'].forEach(ev => uploadPage.addEventListener(ev, (e) => { e.preventDefault(); document.getElementById('uploadBox').classList.add('dragover'); }));
     ['dragleave','drop'].forEach(ev => uploadPage.addEventListener(ev, (e) => { e.preventDefault(); document.getElementById('uploadBox').classList.remove('dragover'); }));
     uploadPage.addEventListener('drop', (e) => {
       const file = e.dataTransfer.files[0];
-      if (file) { const r = new FileReader(); r.onload = (ev) => { scriptText.value = ev.target.result; }; r.readAsText(file); }
+      if (file) {
+        const r = new FileReader();
+        r.onload = (ev) => { scriptText.value = ev.target.result; };
+        r.onerror = () => { alert('文件读取失败，请尝试手动粘贴内容'); };
+        r.readAsText(file, 'UTF-8');
+      }
     });
+
+    // ===================== 模型选择器 =====================
+    function populateModelSelects() {
+      const opts = appState.configs.map(c => `<option value="${c.id}" ${c.id === appState.activeTextConfigId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+      const optsImg = appState.configs.map(c => `<option value="${c.id}" ${c.id === appState.activeImageConfigId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+      [selectTextModel, headerSelectText, headerSelectText2].forEach(sel => { if (sel) { sel.innerHTML = opts; } });
+      [selectImageModel, headerSelectImage, headerSelectImage2].forEach(sel => { if (sel) { sel.innerHTML = optsImg; } });
+    }
+    function onSelectTextModel(id) {
+      appState.activeTextConfigId = id;
+      saveAppState();
+      updateConfigUI();
+    }
+    function onSelectImageModel(id) {
+      appState.activeImageConfigId = id;
+      saveAppState();
+      updateConfigUI();
+    }
+    selectTextModel.addEventListener('change', (e) => onSelectTextModel(e.target.value));
+    selectImageModel.addEventListener('change', (e) => onSelectImageModel(e.target.value));
+    headerSelectText.addEventListener('change', (e) => onSelectTextModel(e.target.value));
+    headerSelectImage.addEventListener('change', (e) => onSelectImageModel(e.target.value));
+    headerSelectText2.addEventListener('change', (e) => onSelectTextModel(e.target.value));
+    headerSelectImage2.addEventListener('change', (e) => onSelectImageModel(e.target.value));
 
     // ===================== API 配置弹窗 =====================
     function openConfig() {
       configModal.classList.remove('hidden');
-      document.getElementById('textBaseUrl').value = config.textBaseUrl;
-      document.getElementById('textApiKey').value = config.textApiKey;
-      document.getElementById('textModel').value = config.textModel;
-      document.getElementById('textSystemPrompt').value = config.textSystemPrompt;
-      document.getElementById('imageBaseUrl').value = config.imageBaseUrl;
-      document.getElementById('imageApiKey').value = config.imageApiKey;
-      document.getElementById('imageModel').value = config.imageModel;
-      document.getElementById('imageSize').value = config.imageSize;
+      showConfigList();
       updateConfigUI();
     }
     function closeConfig() { configModal.classList.add('hidden'); }
+    function showConfigList() {
+      configListView.classList.remove('hidden');
+      configEditView.classList.add('hidden');
+      renderConfigList();
+    }
+    function showConfigEdit(configId) {
+      editingConfigId = configId;
+      configListView.classList.add('hidden');
+      configEditView.classList.remove('hidden');
+
+      const cfg = configId ? appState.configs.find(c => c.id === configId) : null;
+      document.getElementById('btnDeleteConfig').style.display = configId ? 'block' : 'none';
+      document.getElementById('cfgName').value = cfg ? cfg.name : '';
+      document.getElementById('textBaseUrl').value = cfg ? cfg.textBaseUrl : '';
+      document.getElementById('textApiKey').value = cfg ? cfg.textApiKey : '';
+      document.getElementById('textModel').value = cfg ? cfg.textModel : '';
+      document.getElementById('textSystemPrompt').value = cfg ? cfg.textSystemPrompt : DEFAULT_SINGLE_CONFIG.textSystemPrompt;
+      document.getElementById('imageBaseUrl').value = cfg ? cfg.imageBaseUrl : '';
+      document.getElementById('imageApiKey').value = cfg ? cfg.imageApiKey : '';
+      document.getElementById('imageModel').value = cfg ? cfg.imageModel : '';
+      document.getElementById('imageSize').value = cfg ? cfg.imageSize : '1024x1024';
+
+      // 默认切换到文本标签
+      switchConfigTab('text');
+    }
+
+    function renderConfigList() {
+      if (!appState.configs.length) {
+        configListContainer.innerHTML = '<p style="color:#666;font-size:13px;text-align:center;padding:20px;">暂无配置，点击「新建配置」添加</p>';
+        return;
+      }
+      configListContainer.innerHTML = appState.configs.map(cfg => `
+        <div class="config-item ${cfg.id === appState.activeTextConfigId || cfg.id === appState.activeImageConfigId ? 'active' : ''}" data-id="${cfg.id}">
+          <span class="cfg-name">${escapeHtml(cfg.name)}</span>
+          <span class="cfg-tag">${cfg.textModel || '未配置文本'}</span>
+          <span class="cfg-tag">${cfg.imageModel || '未配置生图'}</span>
+          <div class="cfg-actions">
+            <button class="cfg-btn" data-action="edit" data-id="${cfg.id}">编辑</button>
+            <button class="cfg-btn danger" data-action="delete" data-id="${cfg.id}">删除</button>
+          </div>
+        </div>
+      `).join('');
+
+      configListContainer.querySelectorAll('.config-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('.cfg-actions')) return;
+          // 点击配置项设为默认（文本+生图都设为它，简化操作）
+          const id = item.dataset.id;
+          appState.activeTextConfigId = id;
+          appState.activeImageConfigId = id;
+          saveAppState();
+          populateModelSelects();
+          renderConfigList();
+        });
+      });
+      configListContainer.querySelectorAll('[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); showConfigEdit(btn.dataset.id); });
+      });
+      configListContainer.querySelectorAll('[data-action="delete"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('确定删除此配置吗？')) {
+            const id = btn.dataset.id;
+            appState.configs = appState.configs.filter(c => c.id !== id);
+            if (appState.activeTextConfigId === id) appState.activeTextConfigId = appState.configs[0]?.id || null;
+            if (appState.activeImageConfigId === id) appState.activeImageConfigId = appState.configs[0]?.id || null;
+            saveAppState();
+            populateModelSelects();
+            renderConfigList();
+          }
+        });
+      });
+    }
+
+    function switchConfigTab(tab) {
+      document.querySelectorAll('.config-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.getElementById('tabText').classList.toggle('active', tab === 'text');
+      document.getElementById('tabImage').classList.toggle('active', tab === 'image');
+    }
+
     function updateConfigUI() {
-      const ok = isApiConfigured();
+      const ok = isTextApiConfigured();
       btnConfig.textContent = ok ? '⚙️ API 已配置' : '⚙️ 配置 API';
       btnConfig.classList.toggle('ok', ok);
       apiHint.style.display = ok ? 'none' : 'block';
+      populateModelSelects();
     }
 
     document.getElementById('btnConfig').addEventListener('click', openConfig);
     document.getElementById('btnCloseConfig').addEventListener('click', closeConfig);
+    document.getElementById('btnAddConfig').addEventListener('click', () => showConfigEdit(null));
+    document.getElementById('btnEditBack').addEventListener('click', showConfigList);
+    document.getElementById('btnDeleteConfig').addEventListener('click', () => {
+      if (!editingConfigId) return;
+      if (confirm('确定删除此配置吗？')) {
+        appState.configs = appState.configs.filter(c => c.id !== editingConfigId);
+        if (appState.activeTextConfigId === editingConfigId) appState.activeTextConfigId = appState.configs[0]?.id || null;
+        if (appState.activeImageConfigId === editingConfigId) appState.activeImageConfigId = appState.configs[0]?.id || null;
+        saveAppState();
+        populateModelSelects();
+        showConfigList();
+      }
+    });
     document.getElementById('btnResetConfig').addEventListener('click', () => {
-      config = { ...DEFAULT_CONFIG };
-      openConfig();
+      document.getElementById('textBaseUrl').value = DEFAULT_SINGLE_CONFIG.textBaseUrl;
+      document.getElementById('textApiKey').value = '';
+      document.getElementById('textModel').value = DEFAULT_SINGLE_CONFIG.textModel;
+      document.getElementById('textSystemPrompt').value = DEFAULT_SINGLE_CONFIG.textSystemPrompt;
+      document.getElementById('imageBaseUrl').value = DEFAULT_SINGLE_CONFIG.imageBaseUrl;
+      document.getElementById('imageApiKey').value = '';
+      document.getElementById('imageModel').value = DEFAULT_SINGLE_CONFIG.imageModel;
+      document.getElementById('imageSize').value = DEFAULT_SINGLE_CONFIG.imageSize;
     });
     document.getElementById('btnSaveConfig').addEventListener('click', () => {
-      config.textBaseUrl = document.getElementById('textBaseUrl').value;
-      config.textApiKey = document.getElementById('textApiKey').value;
-      config.textModel = document.getElementById('textModel').value;
-      config.textSystemPrompt = document.getElementById('textSystemPrompt').value;
-      config.imageBaseUrl = document.getElementById('imageBaseUrl').value;
-      config.imageApiKey = document.getElementById('imageApiKey').value;
-      config.imageModel = document.getElementById('imageModel').value;
-      config.imageSize = document.getElementById('imageSize').value;
-      saveConfig();
-      updateConfigUI();
-      closeConfig();
+      const name = document.getElementById('cfgName').value.trim();
+      if (!name) { alert('请输入配置名称'); return; }
+      const newCfg = {
+        id: editingConfigId || genId(),
+        name,
+        textBaseUrl: document.getElementById('textBaseUrl').value,
+        textApiKey: document.getElementById('textApiKey').value,
+        textModel: document.getElementById('textModel').value,
+        textSystemPrompt: document.getElementById('textSystemPrompt').value,
+        imageBaseUrl: document.getElementById('imageBaseUrl').value,
+        imageApiKey: document.getElementById('imageApiKey').value,
+        imageModel: document.getElementById('imageModel').value,
+        imageSize: document.getElementById('imageSize').value,
+      };
+      if (editingConfigId) {
+        const idx = appState.configs.findIndex(c => c.id === editingConfigId);
+        if (idx >= 0) appState.configs[idx] = newCfg;
+        else appState.configs.push(newCfg);
+      } else {
+        appState.configs.push(newCfg);
+        if (!appState.activeTextConfigId) appState.activeTextConfigId = newCfg.id;
+        if (!appState.activeImageConfigId) appState.activeImageConfigId = newCfg.id;
+      }
+      saveAppState();
+      populateModelSelects();
+      showConfigList();
     });
     document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -637,30 +938,26 @@
       });
     });
     document.querySelectorAll('.config-tabs button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.config-tabs button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tabText').classList.toggle('hidden', btn.dataset.tab !== 'text');
-        document.getElementById('tabImage').classList.toggle('hidden', btn.dataset.tab !== 'image');
-      });
+      btn.addEventListener('click', () => switchConfigTab(btn.dataset.tab));
     });
 
     // ===================== 解析剧本 =====================
     async function parseScript(script) {
-      if (!isApiConfigured()) {
-        alert('请先配置文本大模型 API！\n\n点击「配置 API」按钮设置。');
+      if (!isTextApiConfigured()) {
+        alert('请先配置文本大模型 API！\n\n点击「配置 API」按钮，至少添加一套包含文本模型的配置。');
         return;
       }
+      const cfg = getTextConfig();
       btnParse.disabled = true;
       btnParse.textContent = '⏳ AI 解析中……';
       try {
-        const resp = await fetch(`${config.textBaseUrl}/chat/completions`, {
+        const resp = await fetch(`${cfg.textBaseUrl}/chat/completions`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.textApiKey}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.textApiKey}` },
           body: JSON.stringify({
-            model: config.textModel,
+            model: cfg.textModel,
             messages: [
-              { role: 'system', content: config.textSystemPrompt },
+              { role: 'system', content: cfg.textSystemPrompt },
               { role: 'user', content: `请将以下剧本内容拆解为分镜列表：\n\n${script}` },
             ],
             temperature: 0.7,
@@ -716,17 +1013,18 @@
 
     // ===================== 生成参考图 =====================
     async function generateImage(shot) {
-      if (!config.imageApiKey || !config.imageBaseUrl) {
+      if (!isImageApiConfigured()) {
         alert('请先配置生图大模型 API！'); openConfig(); return;
       }
+      const cfg = getImageConfig();
       generatingMap[shot.id] = true;
       renderViews();
       try {
         const prompt = shot.imagePrompt || `${shot.shotType}，${shot.description}，影视分镜参考图`;
-        const resp = await fetch(`${config.imageBaseUrl}/images/generations`, {
+        const resp = await fetch(`${cfg.imageBaseUrl}/images/generations`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.imageApiKey}` },
-          body: JSON.stringify({ model: config.imageModel, prompt, size: config.imageSize, n: 1 }),
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.imageApiKey}` },
+          body: JSON.stringify({ model: cfg.imageModel, prompt, size: cfg.imageSize, n: 1 }),
         });
         if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error?.message); }
         const data = await resp.json();

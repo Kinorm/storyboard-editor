@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react'
-import type { Shot, ApiConfig } from './types'
-import { DEFAULT_API_CONFIG } from './types'
+import { useState, useCallback, useMemo } from 'react'
+import type { Shot, ApiConfigs } from './types'
+import { DEFAULT_API_CONFIGS } from './types'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { useAI } from './hooks/useAI'
 import UploadPage from './components/UploadPage'
@@ -13,29 +13,62 @@ import './App.css'
 type Page = 'upload' | 'storyboard'
 type ViewMode = 'modern' | 'classic'
 
-const DEMO_SCRIPT = `场景：雪夜庭院
-
-女子独自站在廊桥上，雪花轻轻飘落。她低头看着掌心的玉坠，神情复杂。
-
-远处传来脚步声。男子白衣如雪，从廊下走来。两人相隔几步停下，默默相望。
-
-女子伸手递出玉坠，男子缓缓接过，指尖相触又缩回。女子转身离去，背影渐远。
-
-男子独自站在原地，望着她离去的方向，手中玉坠微微发亮。雪越下越大。`
+// 兼容旧版配置迁移
+function migrateApiConfig(raw: unknown): ApiConfigs {
+  try {
+    const saved = raw as Record<string, unknown>
+    // 新版格式
+    if (saved.configs && Array.isArray(saved.configs)) {
+      return { ...DEFAULT_API_CONFIGS, ...saved } as ApiConfigs
+    }
+    // 旧版单配置迁移
+    if (saved.textBaseUrl !== undefined) {
+      const old = saved as { textBaseUrl: string; textApiKey: string; textModel: string; textSystemPrompt: string; imageBaseUrl: string; imageApiKey: string; imageModel: string; imageSize: string }
+      return {
+        configs: [{ id: 'cfg_default', name: '已迁移配置', ...old }],
+        activeTextConfigId: 'cfg_default',
+        activeImageConfigId: 'cfg_default',
+      }
+    }
+  } catch {}
+  return JSON.parse(JSON.stringify(DEFAULT_API_CONFIGS))
+}
 
 function App() {
   const [page, setPage] = useState<Page>('upload')
   const [viewMode, setViewMode] = useState<ViewMode>('modern')
-  const [apiConfig, setApiConfig] = useLocalStorage<ApiConfig>('sb-api-config', DEFAULT_API_CONFIG)
+  const [rawApiConfigs, setApiConfigs] = useLocalStorage<unknown>('sb-api-config', DEFAULT_API_CONFIGS)
+  const apiConfigs = useMemo(() => migrateApiConfig(rawApiConfigs), [rawApiConfigs])
   const [showConfig, setShowConfig] = useState(false)
   const [shots, setShots] = useState<Shot[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [generatingMap, setGeneratingMap] = useState<Record<string, boolean>>({})
   const [parseError, setParseError] = useState<string | null>(null)
 
-  const { parseScript, generateImage, parsing, error: aiError } = useAI(apiConfig)
+  const textConfig = useMemo(() =>
+    apiConfigs.configs.find(c => c.id === apiConfigs.activeTextConfigId),
+    [apiConfigs]
+  )
+  const imageConfig = useMemo(() =>
+    apiConfigs.configs.find(c => c.id === apiConfigs.activeImageConfigId),
+    [apiConfigs]
+  )
 
-  const apiConfigured = !!(apiConfig.textApiKey && apiConfig.textBaseUrl)
+  const { parseScript, generateImage, parsing, error: aiError } = useAI(textConfig, imageConfig)
+
+  const apiConfigured = !!(textConfig?.textApiKey && textConfig?.textBaseUrl)
+
+  const handleSaveConfigs = useCallback((next: ApiConfigs) => {
+    setApiConfigs(next as unknown as Record<string, unknown>)
+  }, [setApiConfigs])
+
+  const handleSelectTextConfig = useCallback((id: string) => {
+    setApiConfigs({ ...apiConfigs, activeTextConfigId: id } as unknown as Record<string, unknown>)
+  }, [apiConfigs, setApiConfigs])
+
+  const handleSelectImageConfig = useCallback((id: string) => {
+    setApiConfigs({ ...apiConfigs, activeImageConfigId: id } as unknown as Record<string, unknown>)
+  }, [apiConfigs, setApiConfigs])
 
   // 解析剧本
   const handleParse = useCallback(async (script: string) => {
@@ -50,7 +83,6 @@ function App() {
       const msg = err instanceof Error ? err.message : '解析失败'
       setParseError(msg)
       alert(`解析失败：${msg}\n\n将使用演示数据展示。`)
-      // 回退到演示数据
       const demoShots: Shot[] = [
         { id: '1', number: 1, title: '雪夜庭院', scene: '开场', shotType: '全景', cameraMove: '缓慢推进', description: '雪夜庭院与廊桥，薄雾细雪，女子从右侧缓缓入画。远处灯火阑珊。', dialogue: '', action: '人物向左前方移动', duration: 5, notes: '氛围清冷', imagePrompt: '雪夜庭院，古风建筑，雪花飘落，女子白衣背影' },
         { id: '2', number: 2, title: '女子特写', scene: '开场', shotType: '近景', cameraMove: '镜头推近', description: '女子低头看掌心玉坠，神情犹豫不舍，轻轻握紧。', dialogue: '（内心独白）此去经年……', action: '轻轻握紧玉坠', duration: 4, notes: '表情特写', imagePrompt: '古风女子低头看玉坠，神情忧伤，特写' },
@@ -99,11 +131,14 @@ function App() {
           onOpenConfig={() => setShowConfig(true)}
           apiConfigured={apiConfigured}
           parsing={parsing}
+          apiConfigs={apiConfigs}
+          onSelectTextConfig={handleSelectTextConfig}
+          onSelectImageConfig={handleSelectImageConfig}
         />
         {showConfig && (
           <ApiConfigPanel
-            config={apiConfig}
-            onSave={setApiConfig}
+            configs={apiConfigs}
+            onSave={handleSaveConfigs}
             onClose={() => setShowConfig(false)}
           />
         )}
@@ -127,7 +162,17 @@ function App() {
             📋 分镜表
           </button>
         </div>
-        <button className="btn-config-header" onClick={() => setShowConfig(true)}>⚙️ API</button>
+        <div className="header-model-select">
+          <label>📝</label>
+          <select value={apiConfigs.activeTextConfigId || ''} onChange={(e) => handleSelectTextConfig(e.target.value)}>
+            {apiConfigs.configs.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <label>🎨</label>
+          <select value={apiConfigs.activeImageConfigId || ''} onChange={(e) => handleSelectImageConfig(e.target.value)}>
+            {apiConfigs.configs.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <button className="btn-config-header" onClick={() => setShowConfig(true)}>⚙️</button>
+        </div>
       </header>
 
       <div className="app-body">
@@ -156,8 +201,8 @@ function App() {
 
       {showConfig && (
         <ApiConfigPanel
-          config={apiConfig}
-          onSave={setApiConfig}
+          configs={apiConfigs}
+          onSave={handleSaveConfigs}
           onClose={() => setShowConfig(false)}
         />
       )}

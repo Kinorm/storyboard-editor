@@ -110,6 +110,26 @@ body {
 
 .btn-config:hover { border-color: #aaa; color: #eee; }
 
+/* 模型选择器 */
+.model-selectors {
+  display: flex; gap: 12px; width: 600px;
+}
+.model-select-box {
+  flex: 1; padding: 8px 12px; background: #16213e;
+  border: 1px solid #0f3460; border-radius: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.model-select-box label { font-size: 11px; color: #888; white-space: nowrap; }
+.model-select-box select {
+  flex: 1; background: transparent; border: none; color: #eee;
+  font-size: 13px; outline: none; cursor: pointer;
+}
+.model-select-box select option { background: #16213e; color: #eee; }
+
+@media (max-width: 900px) {
+  .model-selectors { width: 90%; flex-direction: column; }
+}
+
 /* ===== 弹窗 ===== */
 .modal-overlay {
   position: fixed;
@@ -285,6 +305,19 @@ body {
 }
 
 .btn-config-header:hover { border-color: #e94560; color: #e94560; }
+
+.header-model-select {
+  display: flex; align-items: center; gap: 6px;
+}
+.header-model-select select {
+  background: #1a1a2e; border: 1px solid #0f3460;
+  color: #aaa; font-size: 11px; padding: 3px 6px; border-radius: 4px;
+  outline: none; cursor: pointer;
+}
+.header-model-select select option { background: #16213e; color: #eee; }
+.header-model-select label { font-size: 10px; color: #666; }
+
+.app-body {
 
 .app-body {
   flex: 1;

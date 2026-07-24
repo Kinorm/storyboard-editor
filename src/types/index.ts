@@ -1,5 +1,7 @@
 // ===================== API 配置 =====================
-export interface ApiConfig {
+export interface ApiConfigItem {
+  id: string
+  name: string
   // 文本大模型
   textBaseUrl: string
   textApiKey: string
@@ -12,7 +14,13 @@ export interface ApiConfig {
   imageSize: string
 }
 
-export const DEFAULT_API_CONFIG: ApiConfig = {
+export interface ApiConfigs {
+  configs: ApiConfigItem[]
+  activeTextConfigId: string | null
+  activeImageConfigId: string | null
+}
+
+export const DEFAULT_SINGLE_CONFIG = {
   textBaseUrl: 'https://api.openai.com/v1',
   textApiKey: '',
   textModel: 'gpt-4o',
@@ -40,6 +48,24 @@ export const DEFAULT_API_CONFIG: ApiConfig = {
   imageSize: '1024x1024',
 }
 
+export const DEFAULT_API_CONFIGS: ApiConfigs = {
+  configs: [{ id: 'cfg_default', name: '默认配置', ...DEFAULT_SINGLE_CONFIG }],
+  activeTextConfigId: 'cfg_default',
+  activeImageConfigId: 'cfg_default',
+}
+
+// 兼容旧版单配置
+export interface ApiConfig {
+  textBaseUrl: string
+  textApiKey: string
+  textModel: string
+  textSystemPrompt: string
+  imageBaseUrl: string
+  imageApiKey: string
+  imageModel: string
+  imageSize: string
+}
+
 // ===================== 分镜数据 =====================
 export interface Shot {
   id: string
@@ -55,7 +81,6 @@ export interface Shot {
   imageUrl?: string
   imagePrompt?: string
   notes: string
-  // 画布位置（现代视图用）
   x?: number
   y?: number
 }

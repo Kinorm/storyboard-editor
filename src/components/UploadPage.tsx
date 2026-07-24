@@ -1,14 +1,25 @@
-import { useState, useRef } from 'react'
-import type { ApiConfig } from '../types'
+import { useState, useRef, useEffect } from 'react'
+import type { ApiConfigs } from '../types'
 
 interface Props {
   onParse: (script: string) => void
   onOpenConfig: () => void
   apiConfigured: boolean
   parsing: boolean
+  apiConfigs: ApiConfigs
+  onSelectTextConfig: (id: string) => void
+  onSelectImageConfig: (id: string) => void
 }
 
-export default function UploadPage({ onParse, onOpenConfig, apiConfigured, parsing }: Props) {
+export default function UploadPage({
+  onParse,
+  onOpenConfig,
+  apiConfigured,
+  parsing,
+  apiConfigs,
+  onSelectTextConfig,
+  onSelectImageConfig,
+}: Props) {
   const [scriptText, setScriptText] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -19,7 +30,8 @@ export default function UploadPage({ onParse, onOpenConfig, apiConfigured, parsi
       const text = e.target?.result as string
       setScriptText(text)
     }
-    reader.readAsText(file)
+    reader.onerror = () => { alert('文件读取失败，请尝试手动粘贴内容') }
+    reader.readAsText(file, 'UTF-8')
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -33,6 +45,17 @@ export default function UploadPage({ onParse, onOpenConfig, apiConfigured, parsi
     const file = e.target.files?.[0]
     if (file) handleFile(file)
   }
+
+  const textOpts = apiConfigs.configs.map(c => (
+    <option key={c.id} value={c.id} selected={c.id === apiConfigs.activeTextConfigId}>
+      {c.name}
+    </option>
+  ))
+  const imgOpts = apiConfigs.configs.map(c => (
+    <option key={c.id} value={c.id} selected={c.id === apiConfigs.activeImageConfigId}>
+      {c.name}
+    </option>
+  ))
 
   return (
     <div className="upload-page">
@@ -70,11 +93,25 @@ export default function UploadPage({ onParse, onOpenConfig, apiConfigured, parsi
         />
       </div>
 
+      <div className="model-selectors">
+        <div className="model-select-box">
+          <label>📝 文本模型</label>
+          <select onChange={(e) => onSelectTextConfig(e.target.value)} value={apiConfigs.activeTextConfigId || ''}>
+            {apiConfigs.configs.length === 0 && <option>请先配置 API</option>}
+            {textOpts}
+          </select>
+        </div>
+        <div className="model-select-box">
+          <label>🎨 生图模型</label>
+          <select onChange={(e) => onSelectImageConfig(e.target.value)} value={apiConfigs.activeImageConfigId || ''}>
+            {apiConfigs.configs.length === 0 && <option>请先配置 API</option>}
+            {imgOpts}
+          </select>
+        </div>
+      </div>
+
       <div className="upload-actions">
-        <button
-          className="btn-config"
-          onClick={onOpenConfig}
-        >
+        <button className="btn-config" onClick={onOpenConfig}>
           ⚙️ {apiConfigured ? 'API 已配置' : '配置 API'}
         </button>
         <button
@@ -88,7 +125,7 @@ export default function UploadPage({ onParse, onOpenConfig, apiConfigured, parsi
 
       {!apiConfigured && (
         <p style={{ color: '#e94560', fontSize: 13 }}>
-          ⚠️ 请先点击「配置 API」设置你的大模型接口
+          ⚠️ 请先点击「配置 API」添加至少一套文本模型配置
         </p>
       )}
     </div>
