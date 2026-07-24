@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分镜画板工具</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-dark: #1a1a2e;
+      --bg-panel: #16213e;
+      --border: #0f3460;
+      --accent: #e94560;
+      --text: #eee;
+      --text-dim: #aaa;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+    }
+    .hidden { display: none !important; }
+
+    /* ===== 上传页面 ===== */
+    .upload-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: 16px;
+      padding: 40px;
+    }
+    .upload-page h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 4px;
+    }
+    .upload-page .subtitle {
+      color: #888;
+      font-size: 14px;
+      margin-top: -12px;
+    }
+    .upload-box {
+      width: 560px;
+      height: 180px;
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .upload-box:hover, .upload-box.dragover {
+      border-color: var(--accent);
+      background: rgba(233, 69, 96, 0.05);
+    }
+    .upload-box .icon { font-size: 48px; opacity: 0.6; }
+    .upload-box p { color: var(--text-dim); font-size: 15px; }
+    .upload-box .sub { font-size: 12px; color: #666; }
+    .script-editor { width: 560px; }
+    .script-editor label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; }
+    .script-editor textarea {
+      width: 100%; padding: 12px; background: var(--bg-panel);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+      resize: vertical; min-height: 100px; outline: none;
+    }
+    .script-editor textarea:focus { border-color: var(--accent); }
+    .upload-actions { display: flex; gap: 10px; }
+    .btn-parse, .btn-config {
+      padding: 11px 24px; border: none; border-radius: 8px;
+      font-size: 14px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-parse { background: var(--accent); color: #fff; }
+    .btn-parse:hover { background: #c73a50; }
+    .btn-parse:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-config {
+      background: transparent; color: #aaa; border: 1px solid var(--border);
+    }
+    .btn-config:hover { border-color: #aaa; color: #eee; }
+    .btn-config.ok { border-color: #4caf50; color: #4caf50; }
+
+    /* 模型选择器 */
+    .model-selectors {
+      display: flex; gap: 12px; width: 560px;
+    }
+    .model-select-box {
+      flex: 1; padding: 8px 12px; background: var(--bg-panel);
+      border: 1px solid var(--border); border-radius: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .model-select-box label { font-size: 11px; color: #888; white-space: nowrap; }
+    .model-select-box select {
+      flex: 1; background: transparent; border: none; color: #eee;
+      font-size: 13px; outline: none; cursor: pointer;
+    }
+    .model-select-box select option { background: var(--bg-panel); color: #eee; }
+
+    /* ===== 弹窗 ===== */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal-content {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 12px; width: 560px; max-height: 85vh;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 { font-size: 15px; }
+    .btn-close { background: transparent; border: none; color: #888; font-size: 18px; cursor: pointer; }
+    .btn-close:hover { color: #eee; }
+
+    /* 配置列表 */
+    .config-list { padding: 10px 18px; overflow-y: auto; flex: 1; }
+    .config-list-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px;
+    }
+    .config-list-header span { font-size: 12px; color: #888; }
+    .btn-add-config {
+      padding: 4px 12px; background: var(--accent); color: #fff;
+      border: none; border-radius: 5px; font-size: 12px; cursor: pointer;
+    }
+    .config-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; background: var(--bg-dark);
+      border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .config-item:hover { border-color: var(--accent); }
+    .config-item.active { border-color: var(--accent); background: rgba(233,69,96,0.08); }
+    .config-item .cfg-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .config-item .cfg-tag {
+      font-size: 10px; padding: 2px 6px; border-radius: 3px;
+      background: rgba(255,255,255,0.08); color: #aaa;
+    }
+    .config-item .cfg-actions {
+      display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s;
+    }
+    .config-item:hover .cfg-actions { opacity: 1; }
+    .cfg-btn {
+      padding: 3px 8px; background: transparent; border: 1px solid var(--border);
+      border-radius: 4px; color: #aaa; font-size: 11px; cursor: pointer;
+    }
+    .cfg-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cfg-btn.danger:hover { border-color: #ff4444; color: #ff4444; }
+
+    /* 编辑表单 */
+    .config-edit { padding: 14px 18px; overflow-y: auto; flex: 1; }
+    .edit-back {
+      display: flex; align-items: center; gap: 6px; color: #888;
+      font-size: 12px; cursor: pointer; margin-bottom: 12px;
+    }
+    .edit-back:hover { color: #eee; }
+    .config-tabs {
+      display: flex; gap: 4px; margin-bottom: 12px;
+    }
+    .config-tabs button {
+      padding: 7px 14px; background: transparent; border: none;
+      border-bottom: 2px solid transparent; color: #888;
+      font-size: 12px; cursor: pointer;
+    }
+    .config-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .config-section { display: none; }
+    .config-section.active { display: block; }
+    .modal-actions {
+      display: flex; gap: 10px; padding: 10px 18px 14px;
+      border-top: 1px solid var(--border); justify-content: flex-end;
+    }
+
+    /* 预设按钮 */
+    .preset-buttons {
+      display: flex; gap: 6px; padding: 10px 18px;
+      border-bottom: 1px solid var(--border); align-items: center;
+      font-size: 12px; color: #888; flex-wrap: wrap;
+    }
+    .preset-btn {
+      padding: 3px 10px; background: #0f1a30; border: 1px solid var(--border);
+      border-radius: 4px; color: #aaa; font-size: 11px; cursor: pointer;
+    }
+    .preset-btn:hover { border-color: var(--accent); color: #eee; }
+
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 6px 9px; background: var(--bg-dark);
+      border: 1px solid var(--border); border-radius: 5px;
+      color: #eee; font-size: 12px; outline: none; font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 45px; }
+    .form-row { display: flex; gap: 8px; }
+    .form-row .form-group { flex: 1; }
+    .btn-primary, .btn-secondary {
+      padding: 8px 18px; border-radius: 5px;
+      font-size: 12px; cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #c73a50; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-secondary:hover { background: rgba(233, 69, 96, 0.1); }
+
+    /* ===== 分镜应用 ===== */
+    .storyboard-app { display: flex; flex-direction: column; height: 100vh; }
+    .app-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18px; height: 50px; background: var(--bg-panel);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .app-header .left { display: flex; align-items: center; gap: 14px; }
+    .app-header h2 { font-size: 15px; font-weight: 600; }
+    .back-btn {
+      background: transparent; color: #888; border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;
+    }
+    .back-btn:hover { color: #eee; border-color: #888; }
+    .scene-info { font-size: 12px; color: #888; }
+    .view-tabs {
+      display: flex; gap: 3px; background: var(--bg-dark);
+      padding: 3px; border-radius: 8px;
+    }
+    .view-tabs button {
+      padding: 5px 14px; border: none; border-radius: 6px;
+      background: transparent; color: #888; font-size: 12px; cursor: pointer;
+    }
+    .view-tabs button.active { background: var(--accent); color: #fff; }
+    .header-model-select {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .header-model-select select {
+      background: var(--bg-dark); border: 1px solid var(--border);
+      color: #aaa; font-size: 11px; padding: 3px 6px; border-radius: 4px;
+      outline: none; cursor: pointer;
+    }
+    .header-model-select select option { background: var(--bg-panel); color: #eee; }
+    .header-model-select label { font-size: 10px; color: #666; }
+    .btn-config-header {
+      background: transparent; border: 1px solid var(--border); color: #888;
+      padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer;
+    }
+    .btn-config-header:hover { border-color: var(--accent); color: var(--accent); }
+    .app-body { flex: 1; overflow: hidden; display: flex; }
+    .modern-layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* ===== 现代视图 ===== */
+    .modern-body { flex: 1; overflow: auto; padding: 16px; }
+    .shot-strip { display: flex; flex-wrap: wrap; gap: 14px; padding-bottom: 30px; }
+    .shot-card {
+      width: 280px; background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden; cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s; flex-shrink: 0;
+    }
+    .shot-card:hover { border-color: rgba(233, 69, 96, 0.4); }
+    .shot-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.2), 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .shot-header {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 10px; background: #0f1a30; font-size: 12px;
+    }
+    .shot-number {
+      background: var(--accent); color: #fff; width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 5px; font-weight: 700; font-size: 11px;
+    }
+    .shot-meta { display: flex; gap: 4px; margin-left: auto; }
+    .meta-tag {
+      padding: 2px 6px; border-radius: 3px; font-size: 10px;
+      background: rgba(255,255,255,0.08); color: #aaa;
+    }
+    .shot-image {
+      width: 100%; height: 156px; display: flex; align-items: center;
+      justify-content: center; position: relative; overflow: hidden;
+      background-size: cover !important; background-position: center !important;
+    }
+    .shot-image .placeholder-text { color: #555; font-size: 13px; text-align: center; }
+    .shot-image .ai-badge {
+      position: absolute; top: 7px; right: 7px;
+      padding: 2px 6px; background: rgba(0,0,0,0.6);
+      border-radius: 3px; font-size: 10px; color: #aaa;
+    }
+    .generating-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 6px; color: #eee; font-size: 12px;
+    }
+    .spinner {
+      width: 22px; height: 22px; border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .shot-content { padding: 9px 10px; font-size: 12px; }
+    .shot-field { margin-bottom: 6px; }
+    .shot-field:last-child { margin-bottom: 0; }
+    .shot-field label {
+      display: block; font-size: 10px; color: #777;
+      margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .shot-field .value {
+      color: #eee; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .shot-field .value.dialogue {
+      color: #7ec8e3; font-style: italic; padding: 4px 7px;
+      background: rgba(126, 200, 227, 0.08); border-radius: 4px;
+      border-left: 2px solid #7ec8e3;
+    }
+    .btn-gen-img {
+      width: 100%; padding: 7px; background: transparent;
+      border: none; border-top: 1px solid var(--border);
+      color: var(--accent); font-size: 11px; cursor: pointer;
+    }
+    .btn-gen-img:hover { background: rgba(233, 69, 96, 0.1); }
+    .btn-gen-img:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ===== 详情面板 ===== */
+    .detail-panel {
+      width: 300px; background: var(--bg-panel);
+      border-left: 1px solid var(--border); padding: 14px;
+      overflow-y: auto; flex-shrink: 0;
+    }
+    .detail-panel.empty {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 10px; color: #666; font-size: 13px;
+    }
+    .detail-panel h3 {
+      font-size: 14px; margin-bottom: 12px;
+      padding-bottom: 9px; border-bottom: 1px solid var(--border);
+    }
+
+    /* ===== 传统视图 ===== */
+    .classic-body-view { flex: 1; overflow: auto; background: #f5f0e8; color: #333; }
+    .classic-body { padding: 16px 32px 32px; }
+    .storyboard-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      max-width: 1000px; margin: 0 auto;
+    }
+    .storyboard-cell {
+      background: #fff; border: 1px solid #d4c8b0;
+      border-radius: 4px; overflow: hidden;
+    }
+    .cell-image {
+      width: 100%; height: 200px; display: flex; align-items: center;
+      justify-content: center; position: relative; overflow: hidden;
+      background-size: cover !important; background-position: center !important;
+    }
+    .cell-image .placeholder-text { color: #999; font-size: 13px; text-align: center; }
+    .cell-annotations { position: absolute; inset: 0; pointer-events: none; }
+    .arrow-annotation {
+      position: absolute; display: flex; align-items: center; gap: 3px;
+      font-size: 11px; color: #333; background: rgba(255,255,255,0.88);
+      padding: 2px 5px; border-radius: 3px; font-weight: 500;
+    }
+    .arrow-annotation .arrow { font-size: 12px; }
+    .cell-info { padding: 9px 12px; border-top: 1px solid #eee; }
+    .cell-info-top { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+    .cell-number {
+      width: 22px; height: 22px; background: #333; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 3px; font-weight: 700; font-size: 11px;
+    }
+    .cell-shot-type { font-size: 11px; color: #666; font-weight: 500; }
+    .cell-desc { font-size: 11px; line-height: 1.6; color: #444; margin-bottom: 3px; }
+    .cell-camera { font-size: 10px; color: #888; }
+    .cell-dialogue {
+      font-size: 10px; color: #5a7a9a; font-style: italic; margin-top: 3px;
+      padding: 3px 7px; background: rgba(90,122,154,0.08); border-radius: 3px;
+    }
+    .classic-footer-note {
+      background: #fff; border-top: 1px solid #d4c8b0;
+      padding: 10px 32px; font-size: 11px; color: #888; flex-shrink: 0;
+    }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .classic-body-view ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
+
+    /* 模拟图占位色 */
+    .mock-1 { background: linear-gradient(135deg, #2a1a3a, #4a3050) !important; }
+    .mock-2 { background: linear-gradient(135deg, #1a2a3a, #2a4050) !important; }
+    .mock-3 { background: linear-gradient(135deg, #3a2a1a, #504030) !important; }
+    .mock-4 { background: linear-gradient(135deg, #1a3a2a, #2a5030) !important; }
+    .mock-5 { background: linear-gradient(135deg, #3a1a1a, #503030) !important; }
+    .mock-6 { background: linear-gradient(135deg, #2a2a3a, #404050) !important; }
+
+    @media (max-width: 900px) {
+      .storyboard-grid { grid-template-columns: 1fr; }
+      .detail-panel { width: 240px; }
+      .upload-box { width: 90%; }
+      .script-editor { width: 90%; }
+      .model-selectors { width: 90%; flex-direction: column; }
+      .modal-content { width: 90%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== 上传页面 ===== -->
+  <div class="upload-page" id="uploadPage">
+    <h1>🎬 分镜画板工具</h1>
+    <p class="subtitle">上传剧本，AI 自动解析生成分镜</p>
+
+    <div class="upload-box" id="uploadBox">
+      <div class="icon">📄</div>
+      <p>点击或拖拽上传剧本文件</p>
+      <p class="sub">支持 .txt / .docx / .pdf / .md 格式</p>
+      <input type="file" id="fileInput" accept=".txt,.md,.docx,.pdf" style="display:none">
+    </div>
+
+    <div class="script-editor">
+      <label>或直接粘贴剧本内容：</label>
+      <textarea id="scriptText" rows="8" placeholder="在此粘贴剧本内容……"></textarea>
+    </div>
+
+    <div class="model-selectors" id="modelSelectors">
+      <div class="model-select-box">
+        <label>📝 文本模型</label>
+        <select id="selectTextModel"><option>请先配置 API</option></select>
+      </div>
+      <div class="model-select-box">
+        <label>🎨 生图模型</label>
+        <select id="selectImageModel"><option>请先配置 API</option></select>
+      </div>
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn-config" id="btnConfig">⚙️ 配置 API</button>
+      <button class="btn-parse" id="btnParse">🤖 AI 解析剧本</button>
+    </div>
+    <p id="apiHint" style="color: #e94560; font-size: 12px; display: none;">
+      ⚠️ 请先配置至少一套文本大模型 API
+    </p>
+  </div>
+
+  <!-- ===== API 配置弹窗 ===== -->
+  <div class="modal-overlay hidden" id="configModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ API 配置管理</h3>
+        <button class="btn-close" id="btnCloseConfig">✕</button>
+      </div>
+
+      <!-- 配置列表视图 -->
+      <div id="configListView">
+        <div class="config-list">
+          <div class="config-list-header">
+            <span>已保存的配置</span>
+            <button class="btn-add-config" id="btnAddConfig">＋ 新建配置</button>
+          </div>
+          <div id="configListContainer"></div>
+        </div>
+      </div>
+
+      <!-- 配置编辑视图 -->
+      <div id="configEditView" class="hidden">
+        <div class="preset-buttons">
+          <label>快速选择：</label>
+          <button class="preset-btn" data-preset="openai">OpenAI</button>
+          <button class="preset-btn" data-preset="moonshot">Moonshot</button>
+          <button class="preset-btn" data-preset="deepseek">DeepSeek</button>
+          <button class="preset-btn" data-preset="siliconflow">SiliconFlow</button>
+          <button class="preset-btn" data-preset="custom">自定义</button>
+        </div>
+        <div class="config-edit">
+          <div class="edit-back" id="btnEditBack">← 返回配置列表</div>
+          <div class="form-group">
+            <label>配置名称</label>
+            <input type="text" id="cfgName" placeholder="例如：OpenAI 全栈">
+          </div>
+          <div class="config-tabs">
+            <button class="active" data-tab="text">📝 文本大模型</button>
+            <button data-tab="image">🎨 生图大模型</button>
+          </div>
+
+          <div class="config-section active" id="tabText">
+            <div class="form-group">
+              <label>Base URL</label>
+              <input type="text" id="textBaseUrl" placeholder="https://api.openai.com/v1">
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <input type="password" id="textApiKey" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+              <label>模型名称</label>
+              <input type="text" id="textModel" placeholder="gpt-4o">
+            </div>
+            <div class="form-group">
+              <label>System Prompt（系统提示词）</label>
+              <textarea id="textSystemPrompt" rows="5" style="font-size:11px;"></textarea>
+            </div>
+          </div>
+
+          <div class="config-section" id="tabImage">
+            <div class="form-group">
+              <label>Base URL</label>
+              <input type="text" id="imageBaseUrl" placeholder="https://api.openai.com/v1">
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <input type="password" id="imageApiKey" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+              <label>模型名称</label>
+              <input type="text" id="imageModel" placeholder="dall-e-3">
+            </div>
+            <div class="form-group">
+              <label>图片尺寸</label>
+              <select id="imageSize">
+                <option value="1024x1024">1024x1024</option>
+                <option value="1024x1792">1024x1792 (竖版)</option>
+                <option value="1792x1024">1792x1024 (横版)</option>
+                <option value="512x512">512x512</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="btnDeleteConfig" style="margin-right:auto;">🗑️ 删除</button>
+          <button class="btn-secondary" id="btnResetConfig">恢复默认</button>
+          <button class="btn-primary" id="btnSaveConfig">保存配置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 现代视图 ===== -->
+  <div class="storyboard-app hidden" id="modernView">
+    <header class="app-header">
+      <div class="left">
+        <button class="back-btn" id="btnBack1">← 返回</button>
+        <h2 id="projectTitle">《剧本分镜》</h2>
+        <span class="scene-info" id="shotCount">共 0 个镜头</span>
+      </div>
+      <div class="view-tabs">
+        <button class="active" data-view="modern">🎨 现代画板</button>
+        <button data-view="classic">📋 分镜表</button>
+      </div>
+      <div class="header-model-select">
+        <label>📝</label>
+        <select id="headerSelectText"></select>
+        <label>🎨</label>
+        <select id="headerSelectImage"></select>
+        <button class="btn-config-header" id="btnConfigHeader">⚙️</button>
+      </div>
+    </header>
+    <div class="app-body">
+      <div class="modern-layout">
+        <div class="modern-body">
+          <div class="shot-strip" id="shotStrip"></div>
+        </div>
+        <div class="detail-panel empty" id="detailPanel">
+          <div style="font-size:42px; opacity:0.3;">🎬</div>
+          <p style="text-align:center; line-height:1.8;">点击分镜卡片<br>查看和编辑详情</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 传统视图 ===== -->
+  <div class="storyboard-app hidden" id="classicView">
+    <header class="app-header" style="background:#fff; color:#333; border-color:#d4c8b0;">
+      <div class="left">
+        <button class="back-btn" style="color:#666; border-color:#d4c8b0;" id="btnBack2">← 返回</button>
+        <h2>《剧本分镜》分镜表</h2>
+        <span style="color:#888; font-size:13px;" id="shotCount2">共 0 镜</span>
+      </div>
+      <div class="view-tabs" style="background:#f0ebe0;">
+        <button data-view="modern">🎨 现代画板</button>
+        <button class="active" data-view="classic">📋 分镜表</button>
+      </div>
+      <div class="header-model-select">
+        <label>📝</label>
+        <select id="headerSelectText2"></select>
+        <label>🎨</label>
+        <select id="headerSelectImage2"></select>
+        <button class="btn-config-header" style="color:#666; border-color:#d4c8b0;" id="btnConfigHeader2">⚙️</button>
+      </div>
+    </header>
+    <div class="classic-body-view">
+      <div class="classic-body">
+        <div class="storyboard-grid" id="storyboardGrid"></div>
+      </div>
+      <div class="classic-footer-note">
+        注：雪花、雾气、衣袖飘动贯穿全片，氛围清冷克制，情绪含蓄克制。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===================== 默认配置 =====================
+    const DEFAULT_SINGLE_CONFIG = {
+      textBaseUrl: 'https://api.openai.com/v1',
+      textApiKey: '',
+      textModel: 'gpt-4o',
+      textSystemPrompt: `你是一位资深影视分镜师。请根据用户提供的剧本内容，将其拆解为详细的分镜列表。
+
+输出格式必须为 JSON 数组，每个元素包含以下字段：
+- number: 镜号（数字）
+- title: 镜头标题
+- shotType: 景别（全景/远景/中景/近景/特写/双人中景等）
+- cameraMove: 镜头运动（推/拉/摇/移/跟/升降/固定等）
+- description: 画面描述（详细的视觉内容）
+- dialogue: 对白/旁白（如有）
+- action: 动作说明
+- duration: 预估时长（秒）
+- notes: 备注
+
+要求：
+1. 按时间顺序排列镜头
+2. 每个镜头要足够详细，便于导演和摄影师理解
+3. 景别和镜头运动要准确
+4. 对白的镜头要标注说话人`,
+      imageBaseUrl: 'https://api.openai.com/v1',
+      imageApiKey: '',
+      imageModel: 'dall-e-3',
+      imageSize: '1024x1024',
+    };
+
+    const DEFAULT_CONFIGS = {
+      configs: [{ id: 'cfg_default', name: '默认配置', ...DEFAULT_SINGLE_CONFIG }],
+      activeTextConfigId: 'cfg_default',
+      activeImageConfigId: 'cfg_default',
+    };
+
+    const PRESETS = {
+      openai: {
+        textBaseUrl: 'https://api.openai.com/v1', textModel: 'gpt-4o',
+        imageBaseUrl: 'https://api.openai.com/v1', imageModel: 'dall-e-3',
+      },
+      moonshot: {
+        textBaseUrl: 'https://api.moonshot.cn/v1', textModel: 'moonshot-v1-8k',
+        imageBaseUrl: '', imageModel: '',
+      },
+      deepseek: {
+        textBaseUrl: 'https://api.deepseek.com', textModel: 'deepseek-chat',
+        imageBaseUrl: '', imageModel: '',
+      },
+      siliconflow: {
+        textBaseUrl: 'https://api.siliconflow.cn/v1', textModel: 'Qwen/Qwen2.5-72B-Instruct',
+        imageBaseUrl: 'https://api.siliconflow.cn/v1', imageModel: 'stabilityai/stable-diffusion-3-5-large',
+      },
+      custom: { textBaseUrl: '', textModel: '', imageBaseUrl: '', imageModel: '' },
+    };
+
+    // ===================== 状态 =====================
+    let appState = loadAppState();
+    let shots = [];
+    let selectedId = null;
+    let currentView = 'modern';
+    let generatingMap = {};
+    let editingConfigId = null; // null = 新建, string = 编辑
+
+    // ===================== 工具函数 =====================
+    function loadAppState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('sb-api-config') || '{}');
+        // 兼容旧版单配置格式
+        if (saved.configs && Array.isArray(saved.configs)) {
+          return { ...DEFAULT_CONFIGS, ...saved };
+        }
+        // 旧版迁移：单配置 -> 多配置
+        if (saved.textBaseUrl !== undefined) {
+          const migrated = {
+            configs: [{ id: 'cfg_default', name: '已迁移配置', ...saved }],
+            activeTextConfigId: 'cfg_default',
+            activeImageConfigId: 'cfg_default',
+          };
+          return migrated;
+        }
+      } catch {}
+      return JSON.parse(JSON.stringify(DEFAULT_CONFIGS));
+    }
+    function saveAppState() { localStorage.setItem('sb-api-config', JSON.stringify(appState)); }
+    function escapeHtml(text) {
+      const div = document.createElement('div'); div.textContent = text || ''; return div.innerHTML;
+    }
+    function genId() { return 'cfg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+
+    function getTextConfig() {
+      return appState.configs.find(c => c.id === appState.activeTextConfigId) || appState.configs[0];
+    }
+    function getImageConfig() {
+      return appState.configs.find(c => c.id === appState.activeImageConfigId) || appState.configs[0];
+    }
+    function isTextApiConfigured() {
+      const cfg = getTextConfig();
+      return !!(cfg && cfg.textApiKey && cfg.textBaseUrl);
+    }
+    function isImageApiConfigured() {
+      const cfg = getImageConfig();
+      return !!(cfg && cfg.imageApiKey && cfg.imageBaseUrl);
+    }
+
+    // ===================== DOM 元素 =====================
+    const uploadPage = document.getElementById('uploadPage');
+    const modernView = document.getElementById('modernView');
+    const classicView = document.getElementById('classicView');
+    const configModal = document.getElementById('configModal');
+    const scriptText = document.getElementById('scriptText');
+    const btnParse = document.getElementById('btnParse');
+    const btnConfig = document.getElementById('btnConfig');
+    const apiHint = document.getElementById('apiHint');
+    const shotStrip = document.getElementById('shotStrip');
+    const storyboardGrid = document.getElementById('storyboardGrid');
+    const detailPanel = document.getElementById('detailPanel');
+    const shotCount = document.getElementById('shotCount');
+    const shotCount2 = document.getElementById('shotCount2');
+    const configListView = document.getElementById('configListView');
+    const configEditView = document.getElementById('configEditView');
+    const configListContainer = document.getElementById('configListContainer');
+    const selectTextModel = document.getElementById('selectTextModel');
+    const selectImageModel = document.getElementById('selectImageModel');
+    const headerSelectText = document.getElementById('headerSelectText');
+    const headerSelectImage = document.getElementById('headerSelectImage');
+    const headerSelectText2 = document.getElementById('headerSelectText2');
+    const headerSelectImage2 = document.getElementById('headerSelectImage2');
+
+    // ===================== 上传页面交互 =====================
+    document.getElementById('uploadBox').addEventListener('click', () => document.getElementById('fileInput').click());
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => { scriptText.value = ev.target.result; };
+        reader.onerror = () => { alert('文件读取失败，请尝试手动粘贴内容'); };
+        reader.readAsText(file, 'UTF-8');
+      }
+    });
+    ['dragover','dragenter'].forEach(ev => uploadPage.addEventListener(ev, (e) => { e.preventDefault(); document.getElementById('uploadBox').classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(ev => uploadPage.addEventListener(ev, (e) => { e.preventDefault(); document.getElementById('uploadBox').classList.remove('dragover'); }));
+    uploadPage.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const r = new FileReader();
+        r.onload = (ev) => { scriptText.value = ev.target.result; };
+        r.onerror = () => { alert('文件读取失败，请尝试手动粘贴内容'); };
+        r.readAsText(file, 'UTF-8');
+      }
+    });
+
+    // ===================== 模型选择器 =====================
+    function populateModelSelects() {
+      const opts = appState.configs.map(c => `<option value="${c.id}" ${c.id === appState.activeTextConfigId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+      const optsImg = appState.configs.map(c => `<option value="${c.id}" ${c.id === appState.activeImageConfigId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+      [selectTextModel, headerSelectText, headerSelectText2].forEach(sel => { if (sel) { sel.innerHTML = opts; } });
+      [selectImageModel, headerSelectImage, headerSelectImage2].forEach(sel => { if (sel) { sel.innerHTML = optsImg; } });
+    }
+    function onSelectTextModel(id) {
+      appState.activeTextConfigId = id;
+      saveAppState();
+      updateConfigUI();
+    }
+    function onSelectImageModel(id) {
+      appState.activeImageConfigId = id;
+      saveAppState();
+      updateConfigUI();
+    }
+    selectTextModel.addEventListener('change', (e) => onSelectTextModel(e.target.value));
+    selectImageModel.addEventListener('change', (e) => onSelectImageModel(e.target.value));
+    headerSelectText.addEventListener('change', (e) => onSelectTextModel(e.target.value));
+    headerSelectImage.addEventListener('change', (e) => onSelectImageModel(e.target.value));
+    headerSelectText2.addEventListener('change', (e) => onSelectTextModel(e.target.value));
+    headerSelectImage2.addEventListener('change', (e) => onSelectImageModel(e.target.value));
+
+    // ===================== API 配置弹窗 =====================
+    function openConfig() {
+      configModal.classList.remove('hidden');
+      showConfigList();
+      updateConfigUI();
+    }
+    function closeConfig() { configModal.classList.add('hidden'); }
+    function showConfigList() {
+      configListView.classList.remove('hidden');
+      configEditView.classList.add('hidden');
+      renderConfigList();
+    }
+    function showConfigEdit(configId) {
+      editingConfigId = configId;
+      configListView.classList.add('hidden');
+      configEditView.classList.remove('hidden');
+
+      const cfg = configId ? appState.configs.find(c => c.id === configId) : null;
+      document.getElementById('btnDeleteConfig').style.display = configId ? 'block' : 'none';
+      document.getElementById('cfgName').value = cfg ? cfg.name : '';
+      document.getElementById('textBaseUrl').value = cfg ? cfg.textBaseUrl : '';
+      document.getElementById('textApiKey').value = cfg ? cfg.textApiKey : '';
+      document.getElementById('textModel').value = cfg ? cfg.textModel : '';
+      document.getElementById('textSystemPrompt').value = cfg ? cfg.textSystemPrompt : DEFAULT_SINGLE_CONFIG.textSystemPrompt;
+      document.getElementById('imageBaseUrl').value = cfg ? cfg.imageBaseUrl : '';
+      document.getElementById('imageApiKey').value = cfg ? cfg.imageApiKey : '';
+      document.getElementById('imageModel').value = cfg ? cfg.imageModel : '';
+      document.getElementById('imageSize').value = cfg ? cfg.imageSize : '1024x1024';
+
+      // 默认切换到文本标签
+      switchConfigTab('text');
+    }
+
+    function renderConfigList() {
+      if (!appState.configs.length) {
+        configListContainer.innerHTML = '<p style="color:#666;font-size:13px;text-align:center;padding:20px;">暂无配置，点击「新建配置」添加</p>';
+        return;
+      }
+      configListContainer.innerHTML = appState.configs.map(cfg => `
+        <div class="config-item ${cfg.id === appState.activeTextConfigId || cfg.id === appState.activeImageConfigId ? 'active' : ''}" data-id="${cfg.id}">
+          <span class="cfg-name">${escapeHtml(cfg.name)}</span>
+          <span class="cfg-tag">${cfg.textModel || '未配置文本'}</span>
+          <span class="cfg-tag">${cfg.imageModel || '未配置生图'}</span>
+          <div class="cfg-actions">
+            <button class="cfg-btn" data-action="edit" data-id="${cfg.id}">编辑</button>
+            <button class="cfg-btn danger" data-action="delete" data-id="${cfg.id}">删除</button>
+          </div>
+        </div>
+      `).join('');
+
+      configListContainer.querySelectorAll('.config-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('.cfg-actions')) return;
+          // 点击配置项设为默认（文本+生图都设为它，简化操作）
+          const id = item.dataset.id;
+          appState.activeTextConfigId = id;
+          appState.activeImageConfigId = id;
+          saveAppState();
+          populateModelSelects();
+          renderConfigList();
+        });
+      });
+      configListContainer.querySelectorAll('[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); showConfigEdit(btn.dataset.id); });
+      });
+      configListContainer.querySelectorAll('[data-action="delete"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('确定删除此配置吗？')) {
+            const id = btn.dataset.id;
+            appState.configs = appState.configs.filter(c => c.id !== id);
+            if (appState.activeTextConfigId === id) appState.activeTextConfigId = appState.configs[0]?.id || null;
+            if (appState.activeImageConfigId === id) appState.activeImageConfigId = appState.configs[0]?.id || null;
+            saveAppState();
+            populateModelSelects();
+            renderConfigList();
+          }
+        });
+      });
+    }
+
+    function switchConfigTab(tab) {
+      document.querySelectorAll('.config-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.getElementById('tabText').classList.toggle('active', tab === 'text');
+      document.getElementById('tabImage').classList.toggle('active', tab === 'image');
+    }
+
+    function updateConfigUI() {
+      const ok = isTextApiConfigured();
+      btnConfig.textContent = ok ? '⚙️ API 已配置' : '⚙️ 配置 API';
+      btnConfig.classList.toggle('ok', ok);
+      apiHint.style.display = ok ? 'none' : 'block';
+      populateModelSelects();
+    }
+
+    document.getElementById('btnConfig').addEventListener('click', openConfig);
+    document.getElementById('btnCloseConfig').addEventListener('click', closeConfig);
+    document.getElementById('btnAddConfig').addEventListener('click', () => showConfigEdit(null));
+    document.getElementById('btnEditBack').addEventListener('click', showConfigList);
+    document.getElementById('btnDeleteConfig').addEventListener('click', () => {
+      if (!editingConfigId) return;
+      if (confirm('确定删除此配置吗？')) {
+        appState.configs = appState.configs.filter(c => c.id !== editingConfigId);
+        if (appState.activeTextConfigId === editingConfigId) appState.activeTextConfigId = appState.configs[0]?.id || null;
+        if (appState.activeImageConfigId === editingConfigId) appState.activeImageConfigId = appState.configs[0]?.id || null;
+        saveAppState();
+        populateModelSelects();
+        showConfigList();
+      }
+    });
+    document.getElementById('btnResetConfig').addEventListener('click', () => {
+      document.getElementById('textBaseUrl').value = DEFAULT_SINGLE_CONFIG.textBaseUrl;
+      document.getElementById('textApiKey').value = '';
+      document.getElementById('textModel').value = DEFAULT_SINGLE_CONFIG.textModel;
+      document.getElementById('textSystemPrompt').value = DEFAULT_SINGLE_CONFIG.textSystemPrompt;
+      document.getElementById('imageBaseUrl').value = DEFAULT_SINGLE_CONFIG.imageBaseUrl;
+      document.getElementById('imageApiKey').value = '';
+      document.getElementById('imageModel').value = DEFAULT_SINGLE_CONFIG.imageModel;
+      document.getElementById('imageSize').value = DEFAULT_SINGLE_CONFIG.imageSize;
+    });
+    document.getElementById('btnSaveConfig').addEventListener('click', () => {
+      const name = document.getElementById('cfgName').value.trim();
+      if (!name) { alert('请输入配置名称'); return; }
+      const newCfg = {
+        id: editingConfigId || genId(),
+        name,
+        textBaseUrl: document.getElementById('textBaseUrl').value,
+        textApiKey: document.getElementById('textApiKey').value,
+        textModel: document.getElementById('textModel').value,
+        textSystemPrompt: document.getElementById('textSystemPrompt').value,
+        imageBaseUrl: document.getElementById('imageBaseUrl').value,
+        imageApiKey: document.getElementById('imageApiKey').value,
+        imageModel: document.getElementById('imageModel').value,
+        imageSize: document.getElementById('imageSize').value,
+      };
+      if (editingConfigId) {
+        const idx = appState.configs.findIndex(c => c.id === editingConfigId);
+        if (idx >= 0) appState.configs[idx] = newCfg;
+        else appState.configs.push(newCfg);
+      } else {
+        appState.configs.push(newCfg);
+        if (!appState.activeTextConfigId) appState.activeTextConfigId = newCfg.id;
+        if (!appState.activeImageConfigId) appState.activeImageConfigId = newCfg.id;
+      }
+      saveAppState();
+      populateModelSelects();
+      showConfigList();
+    });
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = PRESETS[btn.dataset.preset];
+        if (!p) return;
+        if (p.textBaseUrl) document.getElementById('textBaseUrl').value = p.textBaseUrl;
+        if (p.textModel) document.getElementById('textModel').value = p.textModel;
+        if (p.imageBaseUrl) document.getElementById('imageBaseUrl').value = p.imageBaseUrl;
+        if (p.imageModel) document.getElementById('imageModel').value = p.imageModel;
+      });
+    });
+    document.querySelectorAll('.config-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => switchConfigTab(btn.dataset.tab));
+    });
+
+    // ===================== 解析剧本 =====================
+    async function parseScript(script) {
+      if (!isTextApiConfigured()) {
+        alert('请先配置文本大模型 API！\n\n点击「配置 API」按钮，至少添加一套包含文本模型的配置。');
+        return;
+      }
+      const cfg = getTextConfig();
+      btnParse.disabled = true;
+      btnParse.textContent = '⏳ AI 解析中……';
+      try {
+        const resp = await fetch(`${cfg.textBaseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.textApiKey}` },
+          body: JSON.stringify({
+            model: cfg.textModel,
+            messages: [
+              { role: 'system', content: cfg.textSystemPrompt },
+              { role: 'user', content: `请将以下剧本内容拆解为分镜列表：\n\n${script}` },
+            ],
+            temperature: 0.7,
+          }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error?.message || `HTTP ${resp.status}`);
+        }
+        const data = await resp.json();
+        const content = data.choices?.[0]?.message?.content || '';
+        let parsed = [];
+        try {
+          parsed = JSON.parse(content);
+        } catch {
+          const m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (m) parsed = JSON.parse(m[1]);
+          else { const b = content.match(/\[[\s\S]*\]/); if (b) parsed = JSON.parse(b[0]); }
+        }
+        shots = parsed.map((s, i) => ({
+          ...s, id: `shot_${Date.now()}_${i}`,
+          scene: s.scene || '', imageUrl: '', imagePrompt: '', notes: s.notes || '',
+        }));
+        enterStoryboard();
+      } catch (err) {
+        alert(`解析失败：${err.message}\n\n将使用演示数据。`);
+        useDemoData();
+      } finally {
+        btnParse.disabled = false;
+        btnParse.textContent = '🤖 AI 解析剧本';
+      }
+    }
+
+    function useDemoData() {
+      shots = [
+        { id: '1', number: 1, title: '雪夜庭院', scene: '开场', shotType: '全景', cameraMove: '缓慢推进', description: '雪夜庭院与廊桥，薄雾细雪，女子从右侧缓缓入画。远处灯火阑珊，雪花在灯笼光晕中飘舞。', dialogue: '', action: '人物向左前方移动', duration: 5, notes: '氛围清冷', imageUrl: '', imagePrompt: '雪夜庭院，古风建筑，雪花飘落，女子白衣背影，影视分镜参考图' },
+        { id: '2', number: 2, title: '女子特写', scene: '开场', shotType: '近景', cameraMove: '镜头推近', description: '女子低头看掌心玉坠，神情犹豫不舍，轻轻握紧。发丝在微风中轻轻飘动。', dialogue: '（内心独白）此去经年，不知何日再见……', action: '轻轻握紧玉坠', duration: 4, notes: '表情特写', imageUrl: '', imagePrompt: '古风女子低头看玉坠特写，神情忧伤，雪夜' },
+        { id: '3', number: 3, title: '男子登场', scene: '开场', shotType: '中远景', cameraMove: '镜头右移/跟移', description: '白衣男子背对站在廊下，听见脚步声后微微侧身回头。廊外雪夜朦胧，灯火摇曳。', dialogue: '', action: '微微侧身回头', duration: 4, notes: '背影构图', imageUrl: '', imagePrompt: '古风白衣男子背影，雪夜廊桥，侧身回头，影视分镜' },
+        { id: '4', number: 4, title: '双人相望', scene: '高潮', shotType: '双人中景', cameraMove: '镜头轻推', description: '两人隔着几步距离相望，女子前景右，男子廊下左。风吹衣袖，雪花飘落。', dialogue: '', action: '相望，几步距离', duration: 6, notes: '眼神交流', imageUrl: '', imagePrompt: '古风男女雪夜相望，双人中景，雪花飘落，影视分镜' },
+        { id: '5', number: 5, title: '递出玉坠', scene: '高潮', shotType: '特写', cameraMove: '镜头推近', description: '女子递出玉坠，男子伸手接过，指尖接近未触碰。玉坠在雪光中微微发亮。', dialogue: '', action: '递出玉坠，指尖接近', duration: 5, notes: '画面重点：玉坠', imageUrl: '', imagePrompt: '古风女子递玉坠给男子，手部特写，影视分镜' },
+        { id: '6', number: 6, title: '情绪停顿', scene: '高潮', shotType: '双人近景', cameraMove: '镜头轻推', description: '女子抬眼，勉强露出淡笑；男子低头看玉坠，眉眼微动，欲言又止。', dialogue: '……', action: '停顿，微推', duration: 4, notes: '情绪高潮', imageUrl: '', imagePrompt: '古风男女近景，女子淡笑男子低头，影视分镜' },
+        { id: '7', number: 7, title: '女子离去', scene: '结尾', shotType: '中景', cameraMove: '镜头跟随', description: '女子转身离开，向廊桥深处走去；男子原地未追。背影渐远，雪越下越大。', dialogue: '', action: '女子远离，镜头跟随', duration: 6, notes: '离别氛围', imageUrl: '', imagePrompt: '古风女子转身离去背影，雪夜廊桥，影视分镜' },
+        { id: '8', number: 8, title: '收束远景', scene: '结尾', shotType: '远景', cameraMove: '镜头缓慢拉远', description: '男子独自立于画面中，手中玉坠微垂，望向女子离去方向。雪雾弥漫，灯火渐暗。', dialogue: '', action: '雪雾流动', duration: 7, notes: '收尾镜头', imageUrl: '', imagePrompt: '古风男子独自站立雪夜中，远景，玉坠微光，影视分镜' },
+      ];
+      enterStoryboard();
+    }
+
+    btnParse.addEventListener('click', () => {
+      const text = scriptText.value.trim();
+      if (!text) { alert('请先输入或上传剧本内容'); return; }
+      parseScript(text);
+    });
+
+    // ===================== 生成参考图 =====================
+    async function generateImage(shot) {
+      if (!isImageApiConfigured()) {
+        alert('请先配置生图大模型 API！'); openConfig(); return;
+      }
+      const cfg = getImageConfig();
+      generatingMap[shot.id] = true;
+      renderViews();
+      try {
+        const prompt = shot.imagePrompt || `${shot.shotType}，${shot.description}，影视分镜参考图`;
+        const resp = await fetch(`${cfg.imageBaseUrl}/images/generations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.imageApiKey}` },
+          body: JSON.stringify({ model: cfg.imageModel, prompt, size: cfg.imageSize, n: 1 }),
+        });
+        if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error?.message); }
+        const data = await resp.json();
+        const url = data.data?.[0]?.url || '';
+        const s = shots.find(s => s.id === shot.id);
+        if (s) { s.imageUrl = url; s.imagePrompt = prompt; }
+      } catch (err) {
+        alert(`生成失败：${err.message}\n\n请检查生图 API 配置。`);
+      } finally {
+        generatingMap[shot.id] = false;
+        renderViews();
+      }
+    }
+
+    // ===================== 视图切换 =====================
+    function enterStoryboard() {
+      uploadPage.classList.add('hidden');
+      showView(currentView);
+      updateCounts();
+    }
+    function showView(view) {
+      currentView = view;
+      modernView.classList.toggle('hidden', view !== 'modern');
+      classicView.classList.toggle('hidden', view !== 'classic');
+      document.querySelectorAll('.view-tabs button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+      });
+      renderViews();
+    }
+    function updateCounts() {
+      shotCount.textContent = `共 ${shots.length} 个镜头`;
+      shotCount2.textContent = `共 ${shots.length} 镜`;
+    }
+
+    document.querySelectorAll('.view-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => showView(btn.dataset.view));
+    });
+    document.getElementById('btnBack1').addEventListener('click', () => {
+      uploadPage.classList.remove('hidden'); modernView.classList.add('hidden'); classicView.classList.add('hidden'); selectedId = null;
+    });
+    document.getElementById('btnBack2').addEventListener('click', () => {
+      uploadPage.classList.remove('hidden'); modernView.classList.add('hidden'); classicView.classList.add('hidden'); selectedId = null;
+    });
+    document.getElementById('btnConfigHeader').addEventListener('click', openConfig);
+    document.getElementById('btnConfigHeader2').addEventListener('click', openConfig);
+
+    // ===================== 渲染 =====================
+    const MOCKS = ['mock-1','mock-2','mock-3','mock-4','mock-5','mock-6'];
+
+    function renderViews() {
+      if (currentView === 'modern') renderModern();
+      else renderClassic();
+      if (selectedId) renderDetailPanel();
+    }
+
+    function renderModern() {
+      shotStrip.innerHTML = '';
+      shots.forEach((shot, i) => {
+        const card = document.createElement('div');
+        card.className = 'shot-card' + (shot.id === selectedId ? ' selected' : '');
+        const imgStyle = shot.imageUrl ? `background-image:url(${shot.imageUrl})` : '';
+        const imgClass = shot.imageUrl ? '' : MOCKS[i % MOCKS.length];
+        card.innerHTML = `
+          <div class="shot-header">
+            <span class="shot-number">${shot.number}</span>
+            <span style="flex:1;font-weight:500;font-size:12px;">${escapeHtml(shot.title)}</span>
+            <div class="shot-meta"><span class="meta-tag">${shot.shotType}</span><span class="meta-tag">${shot.duration}s</span></div>
+          </div>
+          <div class="shot-image ${imgClass}" style="${imgStyle}">
+            ${!shot.imageUrl ? `<div class="placeholder-text">🎨<br><small>点击生成参考图</small></div><span class="ai-badge">AI</span>` : ''}
+            ${generatingMap[shot.id] ? '<div class="generating-overlay"><div class="spinner"></div>生成中……</div>' : ''}
+          </div>
+          <div class="shot-content">
+            <div class="shot-field"><label>画面描述</label><div class="value">${escapeHtml(shot.description)}</div></div>
+            ${shot.dialogue ? `<div class="shot-field"><label>对白</label><div class="value dialogue">${escapeHtml(shot.dialogue)}</div></div>` : ''}
+            <div class="shot-field"><label>镜头</label><div class="value">${escapeHtml(shot.cameraMove)}</div></div>
+          </div>
+          <button class="btn-gen-img" data-id="${shot.id}" ${generatingMap[shot.id] ? 'disabled' : ''}>${generatingMap[shot.id] ? '⏳' : '🎨'} 生成参考图</button>
+        `;
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.btn-gen-img')) return;
+          selectedId = shot.id === selectedId ? null : shot.id;
+          renderViews();
+        });
+        card.querySelector('.btn-gen-img').addEventListener('click', (e) => {
+          e.stopPropagation(); generateImage(shot);
+        });
+        shotStrip.appendChild(card);
+      });
+    }
+
+    function renderClassic() {
+      storyboardGrid.innerHTML = '';
+      shots.forEach((shot, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'storyboard-cell';
+        const imgStyle = shot.imageUrl ? `background-image:url(${shot.imageUrl})` : '';
+        const imgClass = shot.imageUrl ? '' : MOCKS[i % MOCKS.length];
+        let anno = '';
+        if (shot.cameraMove.includes('推')) anno += `<div class="arrow-annotation" style="top:8px;left:50%;transform:translateX(-50%);"><span class="arrow">←</span> ${escapeHtml(shot.cameraMove)}</div>`;
+        if (shot.action.includes('移动') || shot.action.includes('远离') || shot.action.includes('回头')) anno += `<div class="arrow-annotation" style="bottom:35px;left:15px;"><span class="arrow">→</span> ${escapeHtml(shot.action)}</div>`;
+        cell.innerHTML = `
+          <div class="cell-image ${imgClass}" style="${imgStyle}">
+            ${!shot.imageUrl ? '<div class="placeholder-text">🎨<br>AI 参考图</div>' : ''}
+            <div class="cell-annotations">${anno}</div>
+          </div>
+          <div class="cell-info">
+            <div class="cell-info-top"><span class="cell-number">${shot.number}</span><span class="cell-shot-type">${shot.shotType}</span></div>
+            <div class="cell-desc">${escapeHtml(shot.description)}</div>
+            <div class="cell-camera">镜头：${escapeHtml(shot.cameraMove)}${shot.action ? ` · ${escapeHtml(shot.action)}` : ''}</div>
+            ${shot.dialogue ? `<div class="cell-dialogue">「${escapeHtml(shot.dialogue)}」</div>` : ''}
+          </div>
+        `;
+        storyboardGrid.appendChild(cell);
+      });
+    }
+
+    function renderDetailPanel() {
+      const shot = shots.find(s => s.id === selectedId);
+      if (!shot) {
+        detailPanel.className = 'detail-panel empty';
+        detailPanel.innerHTML = '<div style="font-size:42px;opacity:0.3;">🎬</div><p style="text-align:center;line-height:1.8;">点击分镜卡片<br>查看和编辑详情</p>';
+        return;
+      }
+      detailPanel.className = 'detail-panel';
+      detailPanel.innerHTML = `
+        <h3>✏️ 镜头 #${shot.number} 详情</h3>
+        <div class="form-group"><label>镜头标题</label><input id="dTitle" value="${escapeHtml(shot.title)}"></div>
+        <div class="form-row">
+          <div class="form-group"><label>景别</label>
+            <select id="dShotType">${['全景','远景','中景','近景','特写','双人中景'].map(t => `<option ${shot.shotType===t?'selected':''}>${t}</option>`).join('')}</select>
+          </div>
+          <div class="form-group"><label>时长(秒)</label><input type="number" id="dDuration" value="${shot.duration}"></div>
+        </div>
+        <div class="form-group"><label>镜头运动</label><input id="dCamera" value="${escapeHtml(shot.cameraMove)}"></div>
+        <div class="form-group"><label>画面描述</label><textarea id="dDesc" rows="3">${escapeHtml(shot.description)}</textarea></div>
+        <div class="form-group"><label>对白/旁白</label><textarea id="dDialogue" rows="2">${escapeHtml(shot.dialogue)}</textarea></div>
+        <div class="form-group"><label>动作说明</label><input id="dAction" value="${escapeHtml(shot.action)}"></div>
+        <div class="form-group"><label>备注</label><input id="dNotes" value="${escapeHtml(shot.notes)}"></div>
+        <button class="btn-primary" id="dRegen" ${generatingMap[shot.id]?'disabled':''}>${generatingMap[shot.id]?'⏳ 生成中……':'🎨 生成参考图'}</button>
+        <button class="btn-secondary" id="dDelete">🗑️ 删除镜头</button>
+      `;
+      const update = () => {
+        shot.title = document.getElementById('dTitle').value;
+        shot.shotType = document.getElementById('dShotType').value;
+        shot.duration = Number(document.getElementById('dDuration').value);
+        shot.cameraMove = document.getElementById('dCamera').value;
+        shot.description = document.getElementById('dDesc').value;
+        shot.dialogue = document.getElementById('dDialogue').value;
+        shot.action = document.getElementById('dAction').value;
+        shot.notes = document.getElementById('dNotes').value;
+        renderViews();
+      };
+      ['dTitle','dCamera','dDesc','dDialogue','dAction','dNotes'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.addEventListener('input', update);
+      });
+      ['dShotType','dDuration'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.addEventListener('change', update);
+      });
+      document.getElementById('dRegen').addEventListener('click', () => generateImage(shot));
+      document.getElementById('dDelete').addEventListener('click', () => {
+        if (confirm('确定删除此镜头吗？')) {
+          shots = shots.filter(s => s.id !== shot.id); selectedId = null;
+          renderViews(); updateCounts();
+        }
+      });
+    }
+
+    // 初始化
+    updateConfigUI();
+  </script>
+</body>
+</html>
