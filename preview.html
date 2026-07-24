@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>分镜画板工具</title>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.21/mammoth.browser.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -441,6 +442,7 @@
 
     <div class="upload-actions">
       <button class="btn-config" id="btnConfig">⚙️ 配置 API</button>
+      <button class="btn-config" id="btnLogs" style="border-color:#0f3460;">📋 日志</button>
       <button class="btn-parse" id="btnParse">🤖 AI 解析剧本</button>
     </div>
     <p id="apiHint" style="color: #e94560; font-size: 12px; display: none;">
@@ -557,6 +559,7 @@
         <select id="headerSelectText"></select>
         <label>🎨</label>
         <select id="headerSelectImage"></select>
+        <button class="btn-config-header" id="btnLogsHeader">📋</button>
         <button class="btn-config-header" id="btnConfigHeader">⚙️</button>
       </div>
     </header>
@@ -590,6 +593,7 @@
         <select id="headerSelectText2"></select>
         <label>🎨</label>
         <select id="headerSelectImage2"></select>
+        <button class="btn-config-header" style="color:#666; border-color:#d4c8b0;" id="btnLogsHeader2">📋</button>
         <button class="btn-config-header" style="color:#666; border-color:#d4c8b0;" id="btnConfigHeader2">⚙️</button>
       </div>
     </header>
@@ -687,7 +691,62 @@
       custom: { textBaseUrl: '', textModel: '', imageBaseUrl: '', imageModel: '' },
     };
 
-    // ===================== 状态 =====================
+    // ===================== 日志系统 =====================
+    const LOG_KEY = 'sb-logs';
+    const LOG_MAX = 500;
+    function nowStr() { return new Date().toLocaleString('zh-CN'); }
+    function log(level, module, msg, detail) {
+      const entry = { t: Date.now(), time: nowStr(), level, module, msg, detail: detail || null };
+      let logs = [];
+      try { logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch {}
+      logs.push(entry);
+      if (logs.length > LOG_MAX) logs = logs.slice(-LOG_MAX);
+      localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+      console.log(`[${level}] [${module}] ${msg}`, detail || '');
+    }
+    function logInfo(m, msg, d) { log('info', m, msg, d); }
+    function logError(m, msg, d) { log('error', m, msg, d); }
+    function getLogs() { try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch { return []; } }
+    function exportLogs() {
+      const logs = getLogs();
+      const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `storyboard-logs-${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+    }
+    function clearLogs() { localStorage.removeItem(LOG_KEY); }
+
+    // ===================== 文件处理 =====================
+    async function readFile(file) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      logInfo('file', '开始读取文件', { name: file.name, size: file.size, type: file.type, ext });
+      if (ext === 'docx') {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          logInfo('file', 'docx 解析成功', { name: file.name, length: result.value.length });
+          return result.value;
+        } catch (err) {
+          logError('file', 'docx 解析失败', { name: file.name, error: err.message });
+          alert('docx 文件解析失败：' + err.message + '\n\n建议将内容复制粘贴到文本框中。');
+          return '';
+        }
+      }
+      // txt / md / 其他纯文本
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = ev.target.result;
+          logInfo('file', '文本文件读取成功', { name: file.name, length: text.length });
+          resolve(text);
+        };
+        reader.onerror = () => {
+          logError('file', '文本文件读取失败', { name: file.name });
+          alert('文件读取失败，请尝试手动粘贴内容');
+          resolve('');
+        };
+        reader.readAsText(file, 'UTF-8');
+      });
+    }
     let appState = loadAppState();
     let shots = [];
     let selectedId = null;
@@ -762,25 +821,15 @@
 
     // ===================== 上传页面交互 =====================
     document.getElementById('uploadBox').addEventListener('click', () => document.getElementById('fileInput').click());
-    document.getElementById('fileInput').addEventListener('change', (e) => {
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
       const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => { scriptText.value = ev.target.result; };
-        reader.onerror = () => { alert('文件读取失败，请尝试手动粘贴内容'); };
-        reader.readAsText(file, 'UTF-8');
-      }
+      if (file) { scriptText.value = await readFile(file); }
     });
     ['dragover','dragenter'].forEach(ev => uploadPage.addEventListener(ev, (e) => { e.preventDefault(); document.getElementById('uploadBox').classList.add('dragover'); }));
     ['dragleave','drop'].forEach(ev => uploadPage.addEventListener(ev, (e) => { e.preventDefault(); document.getElementById('uploadBox').classList.remove('dragover'); }));
-    uploadPage.addEventListener('drop', (e) => {
+    uploadPage.addEventListener('drop', async (e) => {
       const file = e.dataTransfer.files[0];
-      if (file) {
-        const r = new FileReader();
-        r.onload = (ev) => { scriptText.value = ev.target.result; };
-        r.onerror = () => { alert('文件读取失败，请尝试手动粘贴内容'); };
-        r.readAsText(file, 'UTF-8');
-      }
+      if (file) { scriptText.value = await readFile(file); }
     });
 
     // ===================== 模型选择器 =====================
@@ -928,6 +977,7 @@
       document.getElementById('imageSize').value = DEFAULT_SINGLE_CONFIG.imageSize;
     });
     document.getElementById('btnSaveConfig').addEventListener('click', () => {
+      logInfo('config', '保存 API 配置', { name: document.getElementById('cfgName').value });
       const name = document.getElementById('cfgName').value.trim();
       if (!name) { alert('请输入配置名称'); return; }
       const newCfg = {
@@ -971,6 +1021,7 @@
 
     // ===================== 解析剧本 =====================
     async function parseScript(script) {
+      logInfo('parse', '开始解析剧本', { length: script.length });
       if (!isTextApiConfigured()) {
         alert('请先配置文本大模型 API！\n\n点击「配置 API」按钮，至少添加一套包含文本模型的配置。');
         return;
@@ -1041,6 +1092,7 @@
 
     // ===================== 生成参考图 =====================
     async function generateImage(shot) {
+      logInfo('image', '开始生成参考图', { shotId: shot.id, title: shot.title });
       if (!isImageApiConfigured()) {
         alert('请先配置生图大模型 API！'); openConfig(); return;
       }
@@ -1221,8 +1273,63 @@
       });
     }
 
+
+    // ===================== 日志弹窗 =====================
+    const logModal = document.getElementById('logModal');
+    const logContainer = document.getElementById('logContainer');
+    function openLogs() {
+      logModal.classList.remove('hidden');
+      renderLogs();
+    }
+    function closeLogs() { logModal.classList.add('hidden'); }
+    function renderLogs() {
+      const logs = getLogs();
+      if (!logs.length) {
+        logContainer.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">暂无日志</p>';
+        return;
+      }
+      logContainer.innerHTML = logs.slice().reverse().map(l => {
+        const color = l.level === 'error' ? '#e94560' : l.level === 'warn' ? '#ff9800' : '#4caf50';
+        return `<div style="border-bottom:1px solid #0f3460; padding:6px 0;">
+          <span style="color:#888; font-size:11px;">${l.time}</span>
+          <span style="color:${color}; font-size:11px; font-weight:600;">[${l.level.toUpperCase()}]</span>
+          <span style="color:#aaa; font-size:11px;">[${l.module}]</span>
+          <span style="color:#eee;">${l.msg}</span>
+          ${l.detail ? `<pre style="color:#666; font-size:11px; margin:4px 0 0 0; white-space:pre-wrap;">${JSON.stringify(l.detail, null, 2)}</pre>` : ''}
+        </div>`;
+      }).join('');
+    }
+    document.getElementById('btnLogs').addEventListener('click', openLogs);
+    document.getElementById('btnLogsHeader').addEventListener('click', openLogs);
+    document.getElementById('btnLogsHeader2').addEventListener('click', openLogs);
+    document.getElementById('btnCloseLogs').addEventListener('click', closeLogs);
+    document.getElementById('btnCloseLogs2').addEventListener('click', closeLogs);
+    document.getElementById('btnExportLogs').addEventListener('click', exportLogs);
+    document.getElementById('btnClearLogs').addEventListener('click', () => {
+      if (confirm('确定清空所有日志吗？')) { clearLogs(); renderLogs(); }
+    });
+
     // 初始化
     updateConfigUI();
   </script>
+
+  <!-- ===== 日志弹窗 ===== -->
+  <div class="modal-overlay hidden" id="logModal">
+    <div class="modal-content" style="width: 640px;">
+      <div class="modal-header">
+        <h3>📋 运行日志</h3>
+        <button class="btn-close" id="btnCloseLogs">✕</button>
+      </div>
+      <div class="config-list" id="logContainer" style="max-height: 60vh; overflow-y: auto; font-family: monospace; font-size: 12px; line-height: 1.6;">
+        <p style="color:#666; text-align:center; padding:20px;">暂无日志</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btnClearLogs" style="margin-right:auto;">🗑️ 清空</button>
+        <button class="btn-primary" id="btnExportLogs">📥 导出</button>
+        <button class="btn-secondary" id="btnCloseLogs2">关闭</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
